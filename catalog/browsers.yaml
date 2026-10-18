@@ -1,0 +1,43 @@
+- id: chrome-cache
+  label: {en: Chrome cache, tr: Chrome önbelleği}
+  category: browser
+  safety: safe
+  min_size_mb: 50
+  paths:
+    macos: ["{cache}/Google/Chrome/*/Cache", "{cache}/Google/Chrome/*/Code Cache"]
+    windows: ["{local}/Google/Chrome/User Data/*/Cache", "{local}/Google/Chrome/User Data/*/Code Cache"]
+    linux: ["{cache}/google-chrome/*/Cache", "{cache}/google-chrome/*/Code Cache"]
+- id: edge-cache
+  label: {en: Edge cache, tr: Edge önbelleği}
+  category: browser
+  safety: safe
+  min_size_mb: 50
+  paths:
+    macos: ["{cache}/Microsoft Edge/*/Cache", "{cache}/Microsoft Edge/*/Code Cache"]
+    windows: ["{local}/Microsoft/Edge/User Data/*/Cache", "{local}/Microsoft/Edge/User Data/*/Code Cache"]
+    linux: ["{cache}/microsoft-edge/*/Cache"]
+- id: firefox-cache
+  label: {en: Firefox cache, tr: Firefox önbelleği}
+  category: browser
+  safety: safe
+  min_size_mb: 50
+  paths:
+    macos: ["{cache}/Firefox/Profiles/*/cache2"]
+    windows: ["{local}/Mozilla/Firefox/Profiles/*/cache2"]
+    linux: ["{cache}/mozilla/firefox/*/cache2"]
+- id: brave-cache
+  label: {en: Brave cache, tr: Brave önbelleği}
+  category: browser
+  safety: safe
+  min_size_mb: 50
+  paths:
+    macos: ["{cache}/BraveSoftware/Brave-Browser/*/Cache"]
+    windows: ["{local}/BraveSoftware/Brave-Browser/User Data/*/Cache"]
+    linux: ["{cache}/BraveSoftware/Brave-Browser/*/Cache"]
+- id: safari-cache
+  label: {en: Safari cache, tr: Safari önbelleği}
+  category: browser
+  safety: safe
+  min_size_mb: 50
+  paths:
+    macos: ["{cache}/com.apple.Safari"]

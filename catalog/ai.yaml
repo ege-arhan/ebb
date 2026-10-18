@@ -1,0 +1,37 @@
+- id: huggingface-hub
+  label: {en: Hugging Face model cache, tr: Hugging Face model önbelleği}
+  category: ai
+  safety: review
+  min_size_mb: 500
+  note: {en: "Models re-download on demand, but can be many GB.", tr: "Modeller gerektiğinde yeniden iner ama onlarca GB olabilir."}
+  paths:
+    all: ["{home}/.cache/huggingface/hub"]
+- id: ollama-models
+  label: {en: Ollama models, tr: Ollama modelleri}
+  category: ai
+  safety: review
+  min_size_mb: 1000
+  note: {en: "Prefer 'ollama rm <model>' for unused models.", tr: "Kullanılmayan modeller için 'ollama rm <model>' tercih edilir."}
+  paths:
+    all: ["{home}/.ollama/models"]
+- id: lmstudio-models
+  label: {en: LM Studio models, tr: LM Studio modelleri}
+  category: ai
+  safety: review
+  min_size_mb: 1000
+  paths:
+    all: ["{home}/.lmstudio/models", "{home}/.cache/lm-studio/models"]
+- id: torch-hub
+  label: {en: PyTorch hub cache, tr: PyTorch hub önbelleği}
+  category: ai
+  safety: safe
+  min_size_mb: 200
+  paths:
+    all: ["{home}/.cache/torch"]
+- id: claude-code-cache
+  label: {en: Claude Code caches, tr: Claude Code önbellekleri}
+  category: ai
+  safety: safe
+  min_size_mb: 100
+  paths:
+    all: ["{home}/.claude/shell-snapshots", "{home}/.claude/statsig", "{home}/.claude/todos"]

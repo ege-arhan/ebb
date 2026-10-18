@@ -1,0 +1,58 @@
+- id: user-logs-macos
+  label: {en: User logs, tr: Kullanıcı günlükleri}
+  category: system
+  safety: safe
+  min_size_mb: 50
+  paths:
+    macos: ["{home}/Library/Logs"]
+- id: crash-reports-macos
+  label: {en: Crash reports, tr: Çökme raporları}
+  category: system
+  safety: safe
+  min_size_mb: 20
+  paths:
+    macos: ["{home}/Library/Logs/DiagnosticReports"]
+- id: ios-device-backups
+  label: {en: iOS device backups, tr: iOS yedekleri}
+  category: system
+  safety: review
+  min_size_mb: 500
+  note: {en: "May be your only backup of a device.", tr: "Bir cihazın tek yedeği olabilir."}
+  paths:
+    macos: ["{data}/MobileSync/Backup"]
+    windows: ["{data}/Apple Computer/MobileSync/Backup"]
+- id: windows-temp
+  label: {en: User temp files, tr: Geçici dosyalar}
+  category: system
+  safety: safe
+  min_size_mb: 100
+  paths:
+    windows: ["{local}/Temp"]
+- id: windows-crash-dumps
+  label: {en: Crash dumps, tr: Çökme dökümleri}
+  category: system
+  safety: safe
+  min_size_mb: 50
+  paths:
+    windows: ["{local}/CrashDumps"]
+- id: thumbnails-linux
+  label: {en: Thumbnail cache, tr: Küçük resim önbelleği}
+  category: system
+  safety: safe
+  min_size_mb: 50
+  paths:
+    linux: ["{cache}/thumbnails"]
+- id: trash-linux
+  label: {en: Trash, tr: Çöp kutusu}
+  category: system
+  safety: review
+  min_size_mb: 100
+  paths:
+    linux: ["{home}/.local/share/Trash/files"]
+- id: journal-user-cache-linux
+  label: {en: Flatpak app caches, tr: Flatpak önbellekleri}
+  category: system
+  safety: safe
+  min_size_mb: 200
+  paths:
+    linux: ["{home}/.var/app/*/cache"]

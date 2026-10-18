@@ -1,0 +1,24 @@
+[package]
+name = "ebb-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+thiserror.workspace = true
+jwalk.workspace = true
+rusqlite.workspace = true
+blake3.workspace = true
+trash.workspace = true
+dirs.workspace = true
+glob.workspace = true
+sysinfo.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"

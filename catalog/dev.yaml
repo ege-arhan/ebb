@@ -1,0 +1,128 @@
+- id: npm-cache
+  label: {en: npm cache, tr: npm önbelleği}
+  category: dev
+  safety: safe
+  min_size_mb: 100
+  paths:
+    all: ["{home}/.npm/_cacache"]
+    windows: ["{local}/npm-cache"]
+- id: pnpm-store
+  label: {en: pnpm store, tr: pnpm deposu}
+  category: dev
+  safety: review
+  min_size_mb: 200
+  note: {en: "Hard-linked into projects; pruning is safer than deleting.", tr: "Projelere hardlink'lidir; silmek yerine 'pnpm store prune' daha güvenli."}
+  paths:
+    macos: ["{home}/Library/pnpm/store"]
+    windows: ["{local}/pnpm/store"]
+    linux: ["{home}/.local/share/pnpm/store"]
+- id: yarn-cache
+  label: {en: Yarn cache, tr: Yarn önbelleği}
+  category: dev
+  safety: safe
+  min_size_mb: 100
+  paths:
+    macos: ["{cache}/Yarn", "{home}/.yarn/berry/cache"]
+    windows: ["{local}/Yarn/Cache"]
+    linux: ["{cache}/yarn", "{home}/.yarn/berry/cache"]
+- id: bun-cache
+  label: {en: Bun install cache, tr: Bun önbelleği}
+  category: dev
+  safety: safe
+  min_size_mb: 100
+  paths:
+    all: ["{home}/.bun/install/cache"]
+- id: cargo-registry
+  label: {en: Cargo registry cache, tr: Cargo kayıt önbelleği}
+  category: dev
+  safety: safe
+  min_size_mb: 200
+  paths:
+    all: ["{home}/.cargo/registry/cache", "{home}/.cargo/registry/src", "{home}/.cargo/git/checkouts"]
+- id: pip-cache
+  label: {en: pip cache, tr: pip önbelleği}
+  category: dev
+  safety: safe
+  min_size_mb: 100
+  paths:
+    macos: ["{cache}/pip"]
+    windows: ["{local}/pip/Cache"]
+    linux: ["{cache}/pip"]
+- id: uv-cache
+  label: {en: uv cache, tr: uv önbelleği}
+  category: dev
+  safety: safe
+  min_size_mb: 100
+  paths:
+    macos: ["{cache}/uv"]
+    windows: ["{local}/uv/cache"]
+    linux: ["{cache}/uv"]
+- id: gradle-caches
+  label: {en: Gradle caches, tr: Gradle önbelleği}
+  category: dev
+  safety: safe
+  min_size_mb: 200
+  paths:
+    all: ["{home}/.gradle/caches"]
+- id: maven-repo
+  label: {en: Maven local repository, tr: Maven yerel deposu}
+  category: dev
+  safety: review
+  min_size_mb: 200
+  paths:
+    all: ["{home}/.m2/repository"]
+- id: go-build-cache
+  label: {en: Go build cache, tr: Go derleme önbelleği}
+  category: dev
+  safety: safe
+  min_size_mb: 100
+  paths:
+    macos: ["{cache}/go-build"]
+    windows: ["{local}/go-build"]
+    linux: ["{cache}/go-build"]
+- id: xcode-derived-data
+  label: {en: Xcode DerivedData, tr: Xcode DerivedData}
+  category: dev
+  safety: safe
+  min_size_mb: 200
+  paths:
+    macos: ["{home}/Library/Developer/Xcode/DerivedData"]
+- id: xcode-device-support
+  label: {en: Xcode iOS DeviceSupport, tr: Xcode cihaz desteği}
+  category: dev
+  safety: review
+  min_size_mb: 500
+  paths:
+    macos: ["{home}/Library/Developer/Xcode/iOS DeviceSupport"]
+- id: xcode-simulators-unavailable
+  label: {en: CoreSimulator caches, tr: CoreSimulator önbelleği}
+  category: dev
+  safety: review
+  min_size_mb: 500
+  paths:
+    macos: ["{home}/Library/Developer/CoreSimulator/Caches"]
+- id: android-avd-cache
+  label: {en: Android build cache, tr: Android derleme önbelleği}
+  category: dev
+  safety: safe
+  min_size_mb: 200
+  paths:
+    all: ["{home}/.android/build-cache", "{home}/.android/cache"]
+- id: homebrew-cache
+  label: {en: Homebrew downloads, tr: Homebrew indirmeleri}
+  category: dev
+  safety: safe
+  min_size_mb: 100
+  paths:
+    macos: ["{cache}/Homebrew"]
+    linux: ["{cache}/Homebrew"]
+- id: docker-desktop-data
+  label: {en: Docker Desktop VM disk, tr: Docker Desktop disk imajı}
+  category: dev
+  safety: never
+  min_size_mb: 1000
+  note: {en: "Use 'docker system prune' instead.", tr: "Bunun yerine 'docker system prune' kullan."}
+  paths:
+    macos: ["{home}/Library/Containers/com.docker.docker/Data"]
+    windows: ["{local}/Docker"]
+    linux: ["{home}/.docker/desktop"]

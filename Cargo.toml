@@ -1,0 +1,34 @@
+[workspace]
+resolver = "3"
+members = ["crates/ebb-core", "crates/ebb-cli", "crates/ebb-mcp", "apps/desktop/src-tauri"]
+
+[workspace.package]
+version = "0.2.0"
+edition = "2024"
+license = "Apache-2.0"
+repository = "https://github.com/ege-arhan/ebb"
+
+[workspace.dependencies]
+ebb-core = { path = "crates/ebb-core" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+serde_yaml = "0.9"
+thiserror = "2"
+jwalk = "0.8"
+rusqlite = { version = "0.37", features = ["bundled"] }
+blake3 = "1"
+trash = "5"
+dirs = "6"
+clap = { version = "4", features = ["derive"] }
+tempfile = "3"
+glob = "0.3"
+sysinfo = { version = "0.37", default-features = false, features = ["disk"] }
+console = "0.15"
+indicatif = "0.17"
+dialoguer = "0.11"
+clap_complete = "4"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = "debuginfo"

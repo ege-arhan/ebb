@@ -1,0 +1,62 @@
+- id: spotify-cache
+  label: {en: Spotify offline cache, tr: Spotify çevrimdışı önbelleği}
+  category: app
+  safety: review
+  note: {en: "Holds offline downloads; they re-download when needed.", tr: "Çevrimdışı indirmeleri tutar; gerektiğinde yeniden iner."}
+  min_size_mb: 200
+  paths:
+    macos: ["{data}/Spotify/PersistentCache", "{cache}/com.spotify.client"]
+    windows: ["{local}/Spotify/Storage", "{local}/Spotify/Data"]
+    linux: ["{cache}/spotify/Storage", "{home}/.cache/spotify"]
+- id: discord-cache
+  label: {en: Discord cache, tr: Discord önbelleği}
+  category: app
+  safety: safe
+  min_size_mb: 100
+  paths:
+    macos: ["{data}/discord/Cache", "{data}/discord/Code Cache", "{data}/discord/GPUCache"]
+    windows: ["{data}/discord/Cache", "{data}/discord/Code Cache", "{data}/discord/GPUCache"]
+    linux: ["{home}/.config/discord/Cache", "{home}/.config/discord/Code Cache", "{home}/.config/discord/GPUCache"]
+- id: slack-cache
+  label: {en: Slack cache, tr: Slack önbelleği}
+  category: app
+  safety: safe
+  min_size_mb: 100
+  paths:
+    macos: ["{data}/Slack/Cache", "{data}/Slack/Service Worker/CacheStorage"]
+    windows: ["{data}/Slack/Cache", "{data}/Slack/Service Worker/CacheStorage"]
+    linux: ["{home}/.config/Slack/Cache", "{home}/.config/Slack/Service Worker/CacheStorage"]
+- id: teams-cache
+  label: {en: Microsoft Teams cache, tr: Teams önbelleği}
+  category: app
+  safety: safe
+  min_size_mb: 100
+  paths:
+    macos: ["{data}/Microsoft/Teams/Cache", "{home}/Library/Group Containers/UBF8T346G9.com.microsoft.teams"]
+    windows: ["{data}/Microsoft/Teams/Cache", "{local}/Packages/MSTeams_8wekyb3d8bbwe/LocalCache"]
+- id: vscode-cache
+  label: {en: VS Code cached data, tr: VS Code önbelleği}
+  category: app
+  safety: safe
+  min_size_mb: 100
+  paths:
+    macos: ["{data}/Code/CachedData", "{data}/Code/Cache", "{data}/Code/CachedExtensionVSIXs"]
+    windows: ["{data}/Code/CachedData", "{data}/Code/Cache", "{data}/Code/CachedExtensionVSIXs"]
+    linux: ["{home}/.config/Code/CachedData", "{home}/.config/Code/Cache"]
+- id: steam-shader-cache
+  label: {en: Steam shader cache, tr: Steam shader önbelleği}
+  category: app
+  safety: safe
+  min_size_mb: 200
+  paths:
+    macos: ["{data}/Steam/steamapps/shadercache"]
+    windows: ["C:/Program Files (x86)/Steam/steamapps/shadercache"]
+    linux: ["{home}/.local/share/Steam/steamapps/shadercache"]
+- id: zoom-cache
+  label: {en: Zoom cache, tr: Zoom önbelleği}
+  category: app
+  safety: safe
+  min_size_mb: 100
+  paths:
+    macos: ["{data}/zoom.us/AutoUpdater", "{cache}/us.zoom.xos"]
+    windows: ["{data}/Zoom/logs"]

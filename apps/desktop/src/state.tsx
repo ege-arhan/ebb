@@ -1,0 +1,107 @@
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { api } from "./ipc";
+import { dict, type Key, type Lang } from "./i18n";
+import type { AiStore, ClientInfo, DiskUsage, Finding, PlanSummary, Report } from "./types";
+
+type Theme = "system" | "light" | "dark";
+interface Toast { id: number; text: string; action?: { label: string; run: () => void } }
+
+interface Ctx {
+  lang: Lang; setLang(l: Lang): void;
+  theme: Theme; setTheme(t: Theme): void;
+  t(k: Key): string;
+  home: string;
+  disk: DiskUsage | null;
+  diskAt: number;
+  celebrate: number;
+  clearCelebrate(): void;
+  findings: Finding[] | null;
+  ai: AiStore[] | null;
+  journal: PlanSummary[];
+  clients: ClientInfo[];
+  refreshClients(): Promise<void>;
+  reclaimable: number;
+  refresh(): Promise<void>;
+  apply(planId: string, label: string): Promise<Report>;
+  undo(planId: string): Promise<void>;
+  toasts: Toast[];
+  toast(text: string, action?: Toast["action"]): void;
+}
+
+const C = createContext<Ctx>(null!);
+export const useApp = () => useContext(C);
+
+const read = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
+const write = (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* özel pencere vb. */ } };
+
+export function AppProvider({ children }: { children: ReactNode }) {
+  const [lang, setLangS] = useState<Lang>(() => (read("ebb.lang") as Lang) || (navigator.language.startsWith("tr") ? "tr" : "en"));
+  const [theme, setThemeS] = useState<Theme>(() => (read("ebb.theme") as Theme) || "system");
+  const [home, setHome] = useState("");
+  const [disk, setDisk] = useState<DiskUsage | null>(null);
+  const [diskAt, setDiskAt] = useState(Date.now());
+  const [celebrate, setCelebrate] = useState(0);
+  const [findings, setFindings] = useState<Finding[] | null>(null);
+  const [ai, setAi] = useState<AiStore[] | null>(null);
+  const [journal, setJournal] = useState<PlanSummary[]>([]);
+  const [clients, setClients] = useState<ClientInfo[]>([]);
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const nextId = useRef(1);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.theme = theme === "system" ? "" : theme;
+    root.lang = lang;
+  }, [theme, lang]);
+
+  const setLang = (l: Lang) => { setLangS(l); write("ebb.lang", l); };
+  const setTheme = (t: Theme) => { setThemeS(t); write("ebb.theme", t); };
+  const t = useCallback((k: Key) => dict[lang][k] ?? dict.en[k], [lang]);
+
+  const toast = useCallback((text: string, action?: Toast["action"]) => {
+    const id = nextId.current++;
+    setToasts((x) => [...x, { id, text, action }]);
+    setTimeout(() => setToasts((x) => x.filter((y) => y.id !== id)), 9000);
+  }, []);
+
+  const refreshClients = useCallback(async () => {
+    setClients(await api.connectClients().catch(() => []));
+  }, []);
+
+  const refresh = useCallback(async () => {
+    void refreshClients();
+    api.diskUsage().then((d) => { setDisk(d); setDiskAt(Date.now()); }).catch(() => {});
+    api.journalList().then(setJournal).catch(() => {});
+    api.findings(lang === "tr").then(setFindings).catch(() => setFindings([]));
+    api.aiStorage().then(setAi).catch(() => setAi([]));
+  }, [lang, refreshClients]);
+
+  useEffect(() => { api.homeDir().then(setHome); void refresh(); }, [refresh]);
+
+  // Canlı disk: 20 sn'de bir okunur; değişince havza kendiliğinden hareket eder.
+  useEffect(() => {
+    const id = setInterval(() => { if (!document.hidden) api.diskUsage().then((d) => { setDisk(d); setDiskAt(Date.now()); }).catch(() => {}); }, 20000);
+    return () => clearInterval(id);
+  }, []);
+
+  const undo = useCallback(async (planId: string) => {
+    const r = await api.undoPlan(planId);
+    toast(`${dict[lang].restoredToast} · ${r.items.length - r.failed}`);
+    await refresh();
+  }, [lang, refresh, toast]);
+
+  const apply = useCallback(async (planId: string, label: string) => {
+    const r = await api.applyPlan(planId);
+    const ok = r.items.length - r.failed;
+    toast(`${dict[lang].movedToast} · ${ok}${r.failed ? ` (${r.failed} ✕)` : ""}`, { label: dict[lang].undo, run: () => void undo(planId) });
+    void label;
+    if (r.bytes > 0) setCelebrate(r.bytes);
+    await refresh();
+    return r;
+  }, [lang, refresh, toast, undo]);
+
+  const reclaimable = useMemo(() => (findings ?? []).filter((f) => f.safety === "safe").reduce((a, f) => a + f.size, 0), [findings]);
+
+  const value: Ctx = { lang, setLang, theme, setTheme, t, home, disk, diskAt, celebrate, clearCelebrate: () => setCelebrate(0), findings, ai, journal, clients, refreshClients, reclaimable, refresh, apply, undo, toasts, toast };
+  return <C.Provider value={value}>{children}</C.Provider>;
+}
