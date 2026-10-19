@@ -227,6 +227,13 @@ fn critical_name(name: &str) -> bool {
 
 fn system_location(exe: &Path) -> bool {
     let s = exe.to_string_lossy().replace('\\', "/").to_lowercase();
+    // macOS'un kendi kullanıcı uygulamaları (Mail, Notes, Music, Safari) /System altında olsa da kapatılabilir.
+    if cfg!(target_os = "macos")
+        && (s.starts_with("/system/applications/")
+            || s.starts_with("/system/cryptexes/app/system/applications/"))
+    {
+        return false;
+    }
     // Linux'ta kullanıcı uygulamaları da /usr/bin altında; orada yalnızca sistem servis yolları engellenir
     // (sahiplik ve ad kontrolü gerisini tutar).
     let roots: &[&str] = if cfg!(target_os = "linux") {
@@ -351,6 +358,45 @@ pub fn quit_app(pids: &[u32]) -> Result<usize> {
     for &pid in pids {
         quit_check(&s, pid).map_err(|why| Error::Guard(format!("process {pid} ({why})")))?;
     }
+    // macOS: .app içindeki süreçler için uygulamaya Apple Event ile "quit" gönderilir; bu Cmd+Q ile aynıdır,
+    // kaydedilmemiş belge varsa uygulama sorar. Uygulama dışı süreçlere SIGTERM.
+    #[cfg(target_os = "macos")]
+    {
+        let mut apps: Vec<PathBuf> = vec![];
+        let mut rest = vec![];
+        for &pid in pids {
+            let app = s
+                .process(Pid::from_u32(pid))
+                .and_then(|p| p.exe())
+                .and_then(|e| app_of(std::ffi::OsStr::new(""), Some(e)).1);
+            match app {
+                Some(a) if a.extension().is_some_and(|x| x == "app") => {
+                    if !apps.contains(&a) {
+                        apps.push(a);
+                    }
+                }
+                _ => rest.push(pid),
+            }
+        }
+        let mut n = 0;
+        for a in &apps {
+            let script = format!(
+                "tell application \"{}\" to quit",
+                a.display().to_string().replace('"', "")
+            );
+            if std::process::Command::new("osascript")
+                .args(["-e", &script])
+                .output()
+                .is_ok_and(|o| o.status.success())
+            {
+                n += pids.len() - rest.len();
+            }
+        }
+        return Ok(
+            n.min(pids.len() - rest.len()) + rest.iter().filter(|&&pid| terminate(pid)).count()
+        );
+    }
+    #[allow(unreachable_code)]
     Ok(pids.iter().filter(|&&pid| terminate(pid)).count())
 }
 
