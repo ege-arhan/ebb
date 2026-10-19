@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/ebb-core", "crates/ebb-cli", "crates/ebb-mcp", "apps/desktop/src-tauri"]
+members = ["crates/ebb-core", "crates/ebb-cli", "crates/ebb-mcp", "crates/ebb-ai", "apps/desktop/src-tauri"]
 
 [workspace.package]
 version = "0.4.0"
@@ -27,6 +27,8 @@ console = "0.15"
 indicatif = "0.17"
 dialoguer = "0.11"
 clap_complete = "4"
+# Blocking HTTP, plain http only (local models): no TLS stack, no async runtime.
+ureq = { version = "3", default-features = false, features = ["json"] }
 
 [profile.release]
 lto = true
