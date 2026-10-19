@@ -7,6 +7,9 @@ import App from "./App";
 import { AppProvider } from "./state";
 import "./styles.css";
 
+// Pencere görünmezken süs animasyonlarını durdur (CPU/GPU yükü sıfıra yakın kalsın).
+document.addEventListener("visibilitychange", () => document.documentElement.classList.toggle("idle", document.hidden));
+
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <AppProvider>

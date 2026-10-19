@@ -60,3 +60,63 @@
   paths:
     macos: ["{data}/zoom.us/AutoUpdater", "{cache}/us.zoom.xos"]
     windows: ["{data}/Zoom/logs"]
+- id: jetbrains-caches
+  label: {en: JetBrains IDE caches, tr: JetBrains IDE önbellekleri}
+  category: dev
+  safety: safe
+  min_size_mb: 200
+  paths:
+    macos: ["{cache}/JetBrains"]
+    windows: ["{local}/JetBrains/*/caches"]
+    linux: ["{cache}/JetBrains"]
+- id: adobe-media-cache
+  label: {en: Adobe media cache, tr: Adobe medya önbelleği}
+  category: app
+  safety: safe
+  min_size_mb: 200
+  paths:
+    macos: ["{data}/Adobe/Common/Media Cache Files", "{data}/Adobe/Common/Media Cache"]
+    windows: ["{data}/Adobe/Common/Media Cache Files", "{data}/Adobe/Common/Media Cache"]
+- id: figma-cache
+  label: {en: Figma cache, tr: Figma önbelleği}
+  category: app
+  safety: safe
+  min_size_mb: 100
+  paths:
+    macos: ["{data}/Figma/DesktopProfile", "{cache}/com.figma.Desktop"]
+    windows: ["{data}/Figma/DesktopProfile"]
+- id: telegram-cache
+  label: {en: Telegram media cache, tr: Telegram medya önbelleği}
+  category: app
+  safety: review
+  min_size_mb: 200
+  note: {en: "Media re-downloads from the cloud when you open a chat.", tr: "Medya, sohbeti açınca buluttan yeniden iner."}
+  paths:
+    macos: ["{home}/Library/Group Containers/*.ru.keepcoder.Telegram/stable/account-*/postbox/media"]
+    windows: ["{data}/Telegram Desktop/tdata/user_data"]
+    linux: ["{home}/.local/share/TelegramDesktop/tdata/user_data"]
+- id: whatsapp-cache
+  label: {en: WhatsApp media cache, tr: WhatsApp medya önbelleği}
+  category: app
+  safety: review
+  min_size_mb: 200
+  note: {en: "Old media may not be downloadable again.", tr: "Eski medya yeniden indirilemeyebilir."}
+  paths:
+    macos: ["{home}/Library/Group Containers/group.net.whatsapp.WhatsApp.shared/Message/Media"]
+- id: unity-cache
+  label: {en: Unity cache, tr: Unity önbelleği}
+  category: dev
+  safety: safe
+  min_size_mb: 200
+  paths:
+    macos: ["{home}/Library/Unity/cache", "{cache}/com.unity3d.UnityEditor5.x"]
+    windows: ["{local}/Unity/cache"]
+    linux: ["{cache}/unity3d"]
+- id: office-cache
+  label: {en: Microsoft Office caches, tr: Microsoft Office önbellekleri}
+  category: app
+  safety: safe
+  min_size_mb: 100
+  paths:
+    macos: ["{home}/Library/Containers/com.microsoft.Word/Data/Library/Caches", "{home}/Library/Containers/com.microsoft.Excel/Data/Library/Caches", "{home}/Library/Containers/com.microsoft.Powerpoint/Data/Library/Caches"]
+    windows: ["{local}/Microsoft/Office/16.0/OfficeFileCache"]

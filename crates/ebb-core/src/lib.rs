@@ -3,6 +3,7 @@ pub mod agents;
 pub mod catalog;
 pub mod connect;
 pub mod error;
+pub mod finders;
 pub mod guard;
 pub mod journal;
 pub mod ops;

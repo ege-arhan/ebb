@@ -5,7 +5,9 @@ import { useApp } from "../state";
 
 /** Temizlik bittiğinde: çekilen alan sayılarak yükselir, halkalar yayılır, damlalar sıçrar. */
 export function Celebrate() {
-  const { celebrate, clearCelebrate, t } = useApp();
+  const { celebrate, celebrateKind, clearCelebrate, t } = useApp();
+  const word = celebrateKind === "optimize" ? t("won") : celebrateKind === "compress" ? t("savedWord") : t("ebbed");
+  const sub = celebrateKind === "optimize" ? t("wonSub") : celebrateKind === "compress" ? t("compressSub") : t("celebrateSub");
   const [x, setX] = useState(0);
   const drops = useMemo(
     () => Array.from({ length: 22 }, (_, i) => ({ i, dx: (Math.random() - 0.5) * 520, dy: -(120 + Math.random() * 260), d: Math.random() * 0.25, s: 4 + Math.random() * 7 })),
@@ -29,8 +31,8 @@ export function Celebrate() {
           ))}
           <motion.div className="cel-body" initial={{ scale: 0.8, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: "spring", stiffness: 160, damping: 16 }}>
             <p className="cel-num">{human(x)}</p>
-            <p className="cel-word">{t("ebbed")}</p>
-            <small>{t("celebrateSub")}</small>
+            <p className="cel-word">{word}</p>
+            <small>{sub}</small>
             <small className="cel-tap">{t("tapClose")}</small>
           </motion.div>
         </motion.div>

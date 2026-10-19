@@ -126,3 +126,43 @@
     macos: ["{home}/Library/Containers/com.docker.docker/Data"]
     windows: ["{local}/Docker"]
     linux: ["{home}/.docker/desktop"]
+- id: xcode-archives
+  label: {en: Xcode archives, tr: Xcode arşivleri}
+  category: dev
+  safety: review
+  min_size_mb: 500
+  note: {en: "Needed to symbolicate crash reports of shipped builds.", tr: "Yayınlanmış sürümlerin çökme raporlarını çözmek için gerekir."}
+  paths:
+    macos: ["{home}/Library/Developer/Xcode/Archives"]
+- id: nuget-packages
+  label: {en: NuGet packages, tr: NuGet paketleri}
+  category: dev
+  safety: review
+  min_size_mb: 500
+  paths:
+    all: ["{home}/.nuget/packages"]
+- id: composer-cache
+  label: {en: Composer cache, tr: Composer önbelleği}
+  category: dev
+  safety: safe
+  min_size_mb: 100
+  paths:
+    macos: ["{cache}/composer"]
+    windows: ["{local}/Composer"]
+    linux: ["{cache}/composer"]
+- id: playwright-browsers
+  label: {en: Playwright browsers, tr: Playwright tarayıcıları}
+  category: dev
+  safety: safe
+  min_size_mb: 300
+  paths:
+    macos: ["{cache}/ms-playwright"]
+    windows: ["{local}/ms-playwright"]
+    linux: ["{cache}/ms-playwright"]
+- id: puppeteer-browsers
+  label: {en: Puppeteer browsers, tr: Puppeteer tarayıcıları}
+  category: dev
+  safety: safe
+  min_size_mb: 300
+  paths:
+    all: ["{home}/.cache/puppeteer"]

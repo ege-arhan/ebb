@@ -1,6 +1,6 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
 import { mockApi } from "./mock";
-import type { Api, Progress } from "./types";
+import type { Api, DupProgress, Progress } from "./types";
 
 export const inTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
@@ -29,6 +29,21 @@ const real: Api = {
   connectTest: () => invoke("connect_test"),
   journalItems: (planId) => invoke("journal_items", { planId }),
   reveal: (path) => invoke("reveal", { path }),
+  findDuplicates(root, onProgress) {
+    const ch = new Channel<DupProgress>();
+    ch.onmessage = onProgress;
+    return invoke("find_duplicates", { root, onProgress: ch });
+  },
+  optimizeClones: (groups) => invoke("optimize_clones", { groups }),
+  compress: (path) => invoke("compress", { path }),
+  decompress: (path) => invoke("decompress", { path }),
+  largeOld: (root) => invoke("large_old", { root }),
+  oldInstallers: () => invoke("old_installers"),
+  health: () => invoke("health"),
+  topApps: () => invoke("top_apps"),
+  quitApp: (pids) => invoke("quit_app", { pids }),
+  startupItems: () => invoke("startup_items"),
+  setStartup: (id, enabled) => invoke("set_startup", { id, enabled }),
 };
 
 export const api: Api = inTauri ? real : mockApi;

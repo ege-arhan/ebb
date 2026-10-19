@@ -35,6 +35,17 @@ export interface EntryRow { original: string; size: number; status: string; erro
 
 export interface Location { id: string; label: string; path: string; kind: "home" | "folder" | "disk" | "volume" }
 
+export interface DupGroup { hash: string; size: number; files: string[]; reclaimable: number; optimized: boolean }
+export interface DupProgress { stage: string; files: number; bytes: number }
+export interface OptimizeReport { files: number; saved: number; skipped: [string, string][] }
+export interface CompressReport { path: string; before: number; after: number; files: number }
+export interface FoundFile { path: string; size: number; age_days: number; kind: "large" | "installer" }
+export interface MemoryInfo { total: number; used: number; available: number; swap_total: number; swap_used: number; pressure: number }
+export interface AppUsage { name: string; pids: number[]; memory: number; cpu: number; quittable: boolean; path: string | null }
+export interface StartupItem { id: string; name: string; path: string; scope: "user" | "system"; kind: string; enabled: boolean; can_toggle: boolean }
+export interface Tip { id: string; severity: "good" | "info" | "warn" | "bad"; title: string; body: string; action: "clean" | "apps" | "startup" | "restart" | "optimize" | null }
+export interface Health { score: number; memory: MemoryInfo; disk_free_ratio: number; uptime_secs: number; startup_enabled: number; tips: Tip[] }
+
 export interface Api {
   homeDir(): Promise<string>;
   locations(): Promise<Location[]>;
@@ -56,4 +67,15 @@ export interface Api {
   connectTest(): Promise<number>;
   journalItems(planId: string): Promise<EntryRow[]>;
   reveal(path: string): Promise<void>;
+  findDuplicates(root: string | null, onProgress: (p: DupProgress) => void): Promise<{ groups: DupGroup[]; cloneSupported: boolean }>;
+  optimizeClones(groups: DupGroup[]): Promise<OptimizeReport>;
+  compress(path: string): Promise<CompressReport>;
+  decompress(path: string): Promise<CompressReport>;
+  largeOld(root: string | null): Promise<FoundFile[]>;
+  oldInstallers(): Promise<FoundFile[]>;
+  health(): Promise<Health>;
+  topApps(): Promise<AppUsage[]>;
+  quitApp(pids: number[]): Promise<number>;
+  startupItems(): Promise<StartupItem[]>;
+  setStartup(id: string, enabled: boolean): Promise<void>;
 }

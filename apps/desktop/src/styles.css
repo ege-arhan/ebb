@@ -443,3 +443,40 @@ main { z-index: 1; }
 .promptcard h2 { font: 600 20px var(--display); letter-spacing: -.01em; margin-bottom: 4px; }
 .promptbox { margin: 0; padding: 14px 16px; border-radius: 12px; background: var(--bg); border: 1px dashed var(--line); font: 13px/1.6 var(--mono); white-space: pre-wrap; word-break: break-word; }
 .promptfoot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+/* ===== v0.3: optimize ve hızlandır ===== */
+.feature { gap: 16px; } .feature > header { align-items: flex-start; }
+.feat-head { display: flex; gap: 14px; align-items: flex-start; } .feat-head p { margin-top: 3px; max-width: 64ch; font-size: 13px; line-height: 1.5; }
+.feat-ico { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; flex: none; background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); }
+.feat-ico.amber { background: color-mix(in srgb, var(--amber) 15%, transparent); color: var(--amber); }
+.inline-progress { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 8px 10px; color: var(--muted); }
+.inline-progress .progress { grid-column: 1 / -1; width: 100%; }
+.progress.indet i { width: 35%; animation: indet 1.3s ease-in-out infinite; } @keyframes indet { from { transform: translateX(-100%); } to { transform: translateX(290%); } }
+.bigline { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 12px 16px; border-radius: 12px; background: color-mix(in srgb, var(--accent) 9%, var(--bg)); }
+.bigline b.mono { font-size: 18px; color: var(--accent); }
+.note-inline { font-size: 13px; color: var(--amber); }
+.dupes li.done { opacity: .55; } .row-main.dup { grid-template-columns: 1fr 96px 32px; }
+.healthcard { display: grid; grid-template-columns: 200px 1fr; gap: 26px; align-items: center; }
+.health-left { display: grid; justify-items: center; gap: 8px; }
+.ring-gauge { position: relative; width: 150px; height: 150px; } .ring-gauge svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring-gauge circle { fill: none; stroke-width: 11; } .ring-gauge .track { stroke: var(--line); } .ring-gauge .val { stroke: var(--accent); stroke-linecap: round; filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 50%, transparent)); }
+.ring-gauge.warn .val { stroke: var(--amber); } .ring-gauge.bad .val { stroke: var(--danger); }
+.ring-gauge b { position: absolute; inset: 0; display: grid; place-items: center; font: 700 46px var(--display); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.tips { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.tips li { display: grid; grid-template-columns: 22px 1fr auto; gap: 12px; align-items: start; padding: 12px 14px; border-radius: 12px; background: var(--bg); border: 1px solid var(--line); }
+.tips li small { white-space: normal; font: 13px/1.5 var(--body); overflow: visible; }
+.tips li.good svg { color: var(--accent); } .tips li.info svg { color: var(--foam); } .tips li.warn svg { color: var(--amber); } .tips li.bad svg { color: var(--danger); }
+.stat .mini { margin-top: 6px; }
+.apps { list-style: none; margin: 0; padding: 0; display: grid; }
+.apps li { display: grid; grid-template-columns: minmax(160px, 1fr) minmax(90px, 220px) 90px 96px; gap: 16px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.apps li:first-child { border-top: 0; } .apps .size { text-align: right; }
+.startup li { padding: 10px 0; }
+.switch { width: 42px; height: 24px; border-radius: 99px; border: 0; background: var(--line); position: relative; flex: none; transition: background .2s; }
+.switch i { position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 99px; background: var(--surface-2); box-shadow: 0 1px 3px rgba(0,0,0,.35); transition: transform .22s cubic-bezier(.3, 1.4, .5, 1); }
+.switch[aria-checked="true"] { background: var(--accent); } .switch[aria-checked="true"] i { transform: translateX(18px); }
+.switch:disabled { opacity: .45; cursor: not-allowed; }
+@media (max-width: 900px) {
+  .healthcard { grid-template-columns: 1fr; } .apps li { grid-template-columns: 1fr 80px; } .apps .bar { display: none; } .apps li .btn { grid-column: 1 / -1; justify-self: start; }
+}
+/* hafiflik: pencere gizliyken süs animasyonları durur */
+html.idle .shell::before, html.idle .shell::after, html.idle .brand svg, html.idle .live i { animation-play-state: paused; }

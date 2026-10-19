@@ -1,4 +1,4 @@
-import { Bot, Command, History, Plug, ScanSearch, Settings as Cog, ShieldCheck, Sparkles, Undo2, Waves } from "lucide-react";
+import { Bot, Command, Gauge, History, Layers, Plug, ScanSearch, Settings as Cog, ShieldCheck, Sparkles, Undo2, Waves } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { Celebrate } from "./components/Celebrate";
@@ -10,13 +10,16 @@ import { Clean } from "./screens/Clean";
 import { Connect } from "./screens/Connect";
 import { Explore } from "./screens/Explore";
 import { Journal } from "./screens/Journal";
+import { Optimize } from "./screens/Optimize";
+import { Speed } from "./screens/Speed";
 import { Settings } from "./screens/Settings";
 import { Tide } from "./screens/Tide";
 import { useApp } from "./state";
 
-export type Screen = "tide" | "explore" | "clean" | "agents" | "connect" | "journal" | "settings";
+export type Screen = "tide" | "explore" | "clean" | "optimize" | "speed" | "agents" | "connect" | "journal" | "settings";
 const NAV = [
-  { id: "tide", icon: Waves }, { id: "explore", icon: ScanSearch }, { id: "clean", icon: Sparkles }, { id: "agents", icon: Bot },
+  { id: "tide", icon: Waves }, { id: "explore", icon: ScanSearch }, { id: "clean", icon: Sparkles }, { id: "optimize", icon: Layers },
+  { id: "speed", icon: Gauge }, { id: "agents", icon: Bot },
   { id: "connect", icon: Plug }, { id: "journal", icon: History }, { id: "settings", icon: Cog },
 ] as const;
 
@@ -112,6 +115,8 @@ export default function App() {
             <motion.div key={screen} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
               {screen === "tide" && <Tide go={setScreen} />}
               {screen === "clean" && <Clean />}
+              {screen === "optimize" && <Optimize />}
+              {screen === "speed" && <Speed go={setScreen} />}
               {screen === "agents" && <Agents go={setScreen} />}
               {screen === "connect" && <Connect />}
               {screen === "journal" && <Journal />}

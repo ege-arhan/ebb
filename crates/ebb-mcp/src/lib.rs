@@ -23,6 +23,9 @@ fn tools() -> Value {
         {"name":"ebb_findings","description":"Cleanable caches found on this machine (catalog), largest first.","inputSchema":{"type":"object","properties":{}}},
         {"name":"ebb_agents_storage","description":"Disk used by AI coding agents and local model stores (Claude Code, Codex, Cursor, Ollama, LM Studio, Hugging Face).","inputSchema":{"type":"object","properties":{}}},
         {"name":"ebb_plan_cleanup","description":"Create (never apply) a cleanup plan. Use entry_ids from ebb_findings (safe+review) or explicit paths. Defaults to all safe findings. A human applies it with `ebb apply <plan_id> --yes` or in the app.","inputSchema":{"type":"object","properties":{"entry_ids":{"type":"array","items":{"type":"string"}},"paths":{"type":"array","items":{"type":"string"}}}}},
+        {"name":"ebb_duplicates","description":"Duplicate files (identical content) under a path, largest reclaimable first. Read-only; optimizing them needs the user.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"min_mb":{"type":"integer","default":1}}}},
+        {"name":"ebb_large_old_files","description":"Large files not opened for months, plus old installers in Downloads/Desktop. Read-only.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"min_mb":{"type":"integer","default":200},"days":{"type":"integer","default":180}}}},
+        {"name":"ebb_system_health","description":"Health score, memory pressure, heavy apps and startup items with plain-English tips. Read-only.","inputSchema":{"type":"object","properties":{}}},
         {"name":"ebb_plan_status","description":"Status of a plan, or the recent plans when plan_id is omitted.","inputSchema":{"type":"object","properties":{"plan_id":{"type":"string"}}}},
     ])
 }
@@ -42,6 +45,10 @@ fn str_list(a: &Value, key: &str) -> Result<Option<Vec<String>>, String> {
             .map(Some),
         Some(_) => Err(format!("{key} must be an array of strings")),
     }
+}
+
+fn home() -> Option<PathBuf> {
+    std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from)
 }
 
 fn arg_path(a: &Value) -> Result<PathBuf, String> {
@@ -115,6 +122,22 @@ fn call(name: &str, a: &Value) -> Result<Value, String> {
                 None => serde_json::to_value(j.list(20).map_err(e)?).map_err(|x| x.to_string()),
             }
         }
+        "ebb_duplicates" => {
+            let root = a.get("path").and_then(Value::as_str).map(PathBuf::from).or_else(home).ok_or("no home folder")?;
+            let mut g = ebb_core::dupes::find_duplicates(&root, n("min_mb", 1) as u64 * 1_000_000, &std::sync::atomic::AtomicBool::new(false), |_| {}).map_err(e)?;
+            if let Ok(j) = Journal::open_default() {
+                ebb_core::optimize::mark_optimized(&j, &mut g);
+            }
+            let total: u64 = g.iter().filter(|x| !x.optimized).map(|x| x.reclaimable).sum();
+            g.truncate(30);
+            Ok(json!({"reclaimable": total, "groups": g, "next": "A human can turn copies into space-sharing clones with `ebb optimize` or the app's Optimize screen."}))
+        }
+        "ebb_large_old_files" => {
+            let root = a.get("path").and_then(Value::as_str).map(PathBuf::from).or_else(home).ok_or("no home folder")?;
+            let large = ebb_core::finders::large_old_files(&root, n("min_mb", 200) as u64 * 1_000_000, n("days", 180) as u64, 40, &std::sync::atomic::AtomicBool::new(false)).map_err(e)?;
+            Ok(json!({"large": large, "installers": ebb_core::finders::old_installers(14)}))
+        }
+        "ebb_system_health" => Ok(json!({"health": ebb_core::system::health(), "apps": ebb_core::system::top_apps(8)})),
         _ => Err(format!("unknown tool: {name}")),
     }
 }

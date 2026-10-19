@@ -1,5 +1,5 @@
 // Tarayıcıda (Tauri dışı) geliştirme ve ekran görüntüsü doğrulaması için sahte IPC.
-import type { Api, AiStore, ClientInfo, Finding, Node, Plan, PlanSummary, Report } from "./types";
+import type { Api, AiStore, AppUsage, ClientInfo, DupGroup, Finding, Node, Plan, PlanSummary, Report, StartupItem } from "./types";
 
 const HOME = "/Users/demo";
 const GB = 1e9, MB = 1e6;
@@ -70,6 +70,25 @@ let used = 782 * GB;
 const total = 994 * GB;
 const journal: PlanSummary[] = [{ id: "a41c9e07d2b3", created: Date.now() / 1000 - 86400 * 2, total: 3.1 * GB, status: "applied" }];
 const plans = new Map<string, Plan>();
+const dupes: DupGroup[] = [
+  { hash: "a1", size: 1.4 * GB, files: [`${HOME}/Movies/Trip to Lisbon.mov`, `${HOME}/Desktop/Trip to Lisbon copy.mov`], reclaimable: 1.4 * GB, optimized: false },
+  { hash: "b2", size: 2.1 * GB, files: [`${HOME}/.cache/huggingface/hub/model.safetensors`, `${HOME}/.lmstudio/models/model.safetensors`], reclaimable: 2.1 * GB, optimized: false },
+  { hash: "c3", size: 640 * MB, files: [`${HOME}/Documents/Project backup.zip`, `${HOME}/Downloads/Project backup.zip`], reclaimable: 640 * MB, optimized: false },
+  { hash: "d4", size: 86 * MB, files: [`${HOME}/Documents/Thesis final.pdf`, `${HOME}/Downloads/Thesis final.pdf`, `${HOME}/Desktop/Thesis final (1).pdf`], reclaimable: 172 * MB, optimized: false },
+];
+let apps: AppUsage[] = [
+  { name: "Google Chrome", pids: [101, 102, 103], memory: 3.1 * GB, cpu: 12.4, quittable: true, path: "/Applications/Google Chrome.app" },
+  { name: "Docker", pids: [201], memory: 2.2 * GB, cpu: 3.1, quittable: true, path: "/Applications/Docker.app" },
+  { name: "Cursor", pids: [301, 302], memory: 1.4 * GB, cpu: 6.0, quittable: true, path: "/Applications/Cursor.app" },
+  { name: "Slack", pids: [401], memory: 720 * MB, cpu: 0.4, quittable: true, path: "/Applications/Slack.app" },
+  { name: "WindowServer", pids: [88], memory: 610 * MB, cpu: 4.2, quittable: false, path: null },
+];
+const startup: StartupItem[] = [
+  { id: "user:com.spotify.webhelper", name: "com.spotify.webhelper", path: `${HOME}/Library/LaunchAgents/com.spotify.webhelper.plist`, scope: "user", kind: "launch_agent", enabled: true, can_toggle: true },
+  { id: "user:com.google.keystone.agent", name: "com.google.keystone.agent", path: `${HOME}/Library/LaunchAgents/com.google.keystone.agent.plist`, scope: "user", kind: "launch_agent", enabled: true, can_toggle: true },
+  { id: "user:com.adobe.ccxprocess", name: "com.adobe.ccxprocess", path: `${HOME}/Library/LaunchAgents/com.adobe.ccxprocess.plist`, scope: "user", kind: "launch_agent", enabled: false, can_toggle: true },
+  { id: "system:com.docker.vmnetd", name: "com.docker.vmnetd", path: "/Library/LaunchDaemons/com.docker.vmnetd.plist", scope: "system", kind: "launch_agent", enabled: true, can_toggle: false },
+];
 const clients: ClientInfo[] = [
   { id: "claude-code", name: "Claude Code", kind: "agent", installed: true, connected: false, config: "~/.claude.json", note: "Open a new Claude Code session." },
   { id: "codex", name: "Codex", kind: "agent", installed: true, connected: false, config: "~/.codex/config.toml", note: "Open a new Codex session." },
@@ -150,4 +169,49 @@ export const mockApi: Api = {
     return (p?.items ?? [{ path: `${HOME}/.gradle/caches`, size: 2.3 * GB }, { path: `${HOME}/Library/Caches/Google`, size: 0.8 * GB }]).map((i) => ({ original: i.path, size: i.size, status: "applied", error: null }));
   },
   reveal: async () => {},
+  async findDuplicates(_root, onProgress) {
+    for (let i = 1; i <= 8; i++) { await wait(150); onProgress({ stage: i < 5 ? "listing" : "hashing", files: i * 52_000, bytes: i * 9 * GB }); }
+    return { groups: dupes.map((g) => ({ ...g })), cloneSupported: true };
+  },
+  async optimizeClones(groups) {
+    await wait(900);
+    const saved = groups.reduce((a, g) => a + g.reclaimable, 0);
+    groups.forEach((g) => { const d = dupes.find((x) => x.hash === g.hash); if (d) { d.optimized = true; d.reclaimable = 0; } });
+    return { files: groups.reduce((a, g) => a + g.files.length - 1, 0), saved, skipped: [] };
+  },
+  async compress(path) { await wait(1200); return { path, before: 4.2 * GB, after: 2.6 * GB, files: 1830 }; },
+  async decompress(path) { await wait(900); return { path, before: 2.6 * GB, after: 4.2 * GB, files: 1830 }; },
+  async largeOld() {
+    await wait(500);
+    return [
+      { path: `${HOME}/Movies/Old screen recording.mov`, size: 3.8 * GB, age_days: 412, kind: "large" as const },
+      { path: `${HOME}/Documents/VM/ubuntu-22.04.vdi`, size: 12.4 * GB, age_days: 260, kind: "large" as const },
+      { path: `${HOME}/Desktop/export-final-v2.mp4`, size: 1.1 * GB, age_days: 190, kind: "large" as const },
+    ].sort((a, b) => b.size - a.size);
+  },
+  async oldInstallers() {
+    await wait(300);
+    return [
+      { path: `${HOME}/Downloads/Xcode_16.xip`, size: 7.1 * GB, age_days: 88, kind: "installer" as const },
+      { path: `${HOME}/Downloads/Docker.dmg`, size: 610 * MB, age_days: 41, kind: "installer" as const },
+      { path: `${HOME}/Downloads/zoom.pkg`, size: 98 * MB, age_days: 120, kind: "installer" as const },
+    ];
+  },
+  async health() {
+    await wait(300);
+    return {
+      score: 72, disk_free_ratio: (total - used) / total, uptime_secs: 9 * 86400, startup_enabled: 3,
+      memory: { total: 16 * GB, used: 12.9 * GB, available: 3.1 * GB, swap_total: 4 * GB, swap_used: 1.6 * GB, pressure: 0.68 },
+      tips: [
+        { id: "uptime", severity: "warn" as const, title: "Your Mac has been on for 9 days", body: "A restart clears memory that apps leaked over time and applies pending updates.", action: "restart" as const },
+        { id: "heavy", severity: "info" as const, title: "Google Chrome is using 3.1 GB of memory", body: "Closing tabs you no longer need, or quitting it for a while, frees memory for other apps.", action: "apps" as const },
+        { id: "startup", severity: "info" as const, title: "3 items start with your Mac", body: "Fewer startup items mean a faster login and less background work.", action: "startup" as const },
+        { id: "disk", severity: "good" as const, title: "Your disk has healthy free space", body: "21% free. macOS stays fast while at least ~10% is free.", action: null },
+      ],
+    };
+  },
+  async topApps() { await wait(300); return apps.map((a) => ({ ...a, cpu: Math.max(0, a.cpu + (Math.random() - 0.5) * 3) })); },
+  async quitApp(pids) { await wait(400); apps = apps.filter((a) => a.pids[0] !== pids[0]); return pids.length; },
+  async startupItems() { await wait(200); return startup.map((s) => ({ ...s })); },
+  async setStartup(id, enabled) { await wait(250); const s = startup.find((x) => x.id === id); if (s) s.enabled = enabled; },
 };

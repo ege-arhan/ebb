@@ -23,7 +23,7 @@ export function Settings() {
         <h2>{t("shortcuts")}</h2>
         <dl className="keys">
           <dt>{t("palette")}</dt><dd><kbd>{mod}</kbd> <kbd>K</kbd></dd>
-          <dt>{t("goTo")}</dt><dd><kbd>{mod}</kbd> <kbd>1</kbd>–<kbd>7</kbd></dd>
+          <dt>{t("goTo")}</dt><dd><kbd>{mod}</kbd> <kbd>1</kbd>–<kbd>9</kbd></dd>
         </dl>
       </section>
       <section className="panel">

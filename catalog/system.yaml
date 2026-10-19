@@ -56,3 +56,32 @@
   min_size_mb: 200
   paths:
     linux: ["{home}/.var/app/*/cache"]
+- id: mail-downloads
+  label: {en: Mail attachments cache, tr: Mail ek önbelleği}
+  category: system
+  safety: safe
+  min_size_mb: 50
+  paths:
+    macos: ["{home}/Library/Containers/com.apple.mail/Data/Library/Mail Downloads"]
+- id: quicklook-thumbnails
+  label: {en: Thumbnail cache, tr: Küçük resim önbelleği}
+  category: system
+  safety: safe
+  min_size_mb: 50
+  paths:
+    windows: ["{local}/Microsoft/Windows/Explorer/thumbcache_*.db"]
+- id: windows-inet-cache
+  label: {en: Internet cache (legacy), tr: İnternet önbelleği (eski)}
+  category: system
+  safety: safe
+  min_size_mb: 50
+  paths:
+    windows: ["{local}/Microsoft/Windows/INetCache"]
+- id: user-trash-macos
+  label: {en: Trash, tr: Çöp Kutusu}
+  category: system
+  safety: never
+  min_size_mb: 200
+  note: {en: "Empty it from Finder when you are sure.", tr: "Emin olduğunda Finder'dan boşalt."}
+  paths:
+    macos: ["{home}/.Trash"]

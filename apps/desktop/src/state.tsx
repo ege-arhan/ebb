@@ -14,6 +14,8 @@ interface Ctx {
   disk: DiskUsage | null;
   diskAt: number;
   celebrate: number;
+  celebrateKind: "trash" | "optimize" | "compress";
+  celebrateWith(bytes: number, kind: "trash" | "optimize" | "compress"): void;
   clearCelebrate(): void;
   findings: Finding[] | null;
   ai: AiStore[] | null;
@@ -41,6 +43,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [disk, setDisk] = useState<DiskUsage | null>(null);
   const [diskAt, setDiskAt] = useState(Date.now());
   const [celebrate, setCelebrate] = useState(0);
+  const [celebrateKind, setCelebrateKind] = useState<"trash" | "optimize" | "compress">("trash");
   const [findings, setFindings] = useState<Finding[] | null>(null);
   const [ai, setAi] = useState<AiStore[] | null>(null);
   const [journal, setJournal] = useState<PlanSummary[]>([]);
@@ -95,13 +98,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const ok = r.items.length - r.failed;
     toast(`${dict[lang].movedToast} · ${ok}${r.failed ? ` (${r.failed} ✕)` : ""}`, { label: dict[lang].undo, run: () => void undo(planId) });
     void label;
-    if (r.bytes > 0) setCelebrate(r.bytes);
+    if (r.bytes > 0) { setCelebrateKind("trash"); setCelebrate(r.bytes); }
     await refresh();
     return r;
   }, [lang, refresh, toast, undo]);
 
   const reclaimable = useMemo(() => (findings ?? []).filter((f) => f.safety === "safe").reduce((a, f) => a + f.size, 0), [findings]);
 
-  const value: Ctx = { lang, setLang, theme, setTheme, t, home, disk, diskAt, celebrate, clearCelebrate: () => setCelebrate(0), findings, ai, journal, clients, refreshClients, reclaimable, refresh, apply, undo, toasts, toast };
+  const value: Ctx = { lang, setLang, theme, setTheme, t, home, disk, diskAt, celebrate, celebrateKind, celebrateWith: (b: number, k: "trash" | "optimize" | "compress") => { setCelebrateKind(k); setCelebrate(b); }, clearCelebrate: () => setCelebrate(0), findings, ai, journal, clients, refreshClients, reclaimable, refresh, apply, undo, toasts, toast };
   return <C.Provider value={value}>{children}</C.Provider>;
 }
