@@ -6,7 +6,7 @@ const isMac = navigator.platform.toLowerCase().includes("mac");
 const mod = isMac ? "⌘" : "Ctrl";
 
 export function Settings() {
-  const { t, lang, setLang, theme, setTheme } = useApp();
+  const { t, lang, setLang, theme, setTheme, checkUpdates, setCheckUpdates } = useApp();
   return (
     <div className="page narrow">
       <PageHead eyebrow={t("settings")} title={t("settings")} lead={t("settingsLead")} />
@@ -18,6 +18,12 @@ export function Settings() {
         <div className="field"><span>{t("language")}</span>
           <div className="seg" role="group">{(["en", "tr"] as const).map((v) => (
             <button key={v} aria-pressed={lang === v} onClick={() => setLang(v)}>{v === "en" ? "English" : "Türkçe"}</button>))}</div></div>
+      </section>
+      <section className="panel">
+        <div className="field">
+          <span className="rowtext"><b>{t("updatesSetting")}</b><small className="wrapsmall">{t("updatesHint")}</small></span>
+          <button role="switch" aria-checked={checkUpdates} aria-label={t("updatesSetting")} className="switch" onClick={() => setCheckUpdates(!checkUpdates)}><i /></button>
+        </div>
       </section>
       <section className="panel">
         <h2>{t("shortcuts")}</h2>

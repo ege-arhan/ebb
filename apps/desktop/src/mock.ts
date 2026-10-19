@@ -1,4 +1,5 @@
 // Tarayıcıda (Tauri dışı) geliştirme ve ekran görüntüsü doğrulaması için sahte IPC.
+import type { TrashEntry } from "./types";
 import type { Api, AiStore, AppUsage, ClientInfo, DupGroup, Finding, Node, Plan, PlanSummary, Report, StartupItem } from "./types";
 
 const HOME = "/Users/demo";
@@ -70,6 +71,12 @@ let used = 782 * GB;
 const total = 994 * GB;
 const journal: PlanSummary[] = [{ id: "a41c9e07d2b3", created: Date.now() / 1000 - 86400 * 2, total: 3.1 * GB, status: "applied" }];
 const plans = new Map<string, Plan>();
+let trash: TrashEntry[] = [
+  { id: "t1", name: "caches", size: 2.3 * GB, deleted_at: Date.now() / 1000 - 3600, original: `${HOME}/.gradle/caches`, by_ebb: true, plan_id: "a41c9e07d2b3", restorable: true },
+  { id: "t2", name: "Cache", size: 1.9 * GB, deleted_at: Date.now() / 1000 - 3600, original: `${HOME}/Library/Caches/Google/Chrome/Default/Cache`, by_ebb: true, plan_id: "a41c9e07d2b3", restorable: true },
+  { id: "t3", name: "Screen Recording 2026-09-12.mov", size: 740 * MB, deleted_at: Date.now() / 1000 - 86400 * 3, original: null, by_ebb: false, plan_id: null, restorable: false },
+  { id: "t4", name: "old-notes.zip", size: 12 * MB, deleted_at: Date.now() / 1000 - 86400 * 9, original: null, by_ebb: false, plan_id: null, restorable: false },
+];
 const dupes: DupGroup[] = [
   { hash: "a1", size: 1.4 * GB, files: [`${HOME}/Movies/Trip to Lisbon.mov`, `${HOME}/Desktop/Trip to Lisbon copy.mov`], reclaimable: 1.4 * GB, optimized: false },
   { hash: "b2", size: 2.1 * GB, files: [`${HOME}/.cache/huggingface/hub/model.safetensors`, `${HOME}/.lmstudio/models/model.safetensors`], reclaimable: 2.1 * GB, optimized: false },
@@ -169,6 +176,21 @@ export const mockApi: Api = {
     return (p?.items ?? [{ path: `${HOME}/.gradle/caches`, size: 2.3 * GB }, { path: `${HOME}/Library/Caches/Google`, size: 0.8 * GB }]).map((i) => ({ original: i.path, size: i.size, status: "applied", error: null }));
   },
   reveal: async () => {},
+  async diskHistory(days) {
+    const now = Date.now() / 1000, out = [];
+    for (let i = days * 4; i >= 0; i--) {
+      const ts = now - i * 6 * 3600;
+      const drift = Math.sin(i / 9) * 6 * GB + (days * 4 - i) * 0.12 * GB;
+      out.push({ ts, total, free: Math.max(40 * GB, total - used + 18 * GB - drift) });
+    }
+    return out;
+  },
+  openRelease: async (url) => { window.open(url, "_blank"); },
+  trashList: async () => { await wait(300); return trash.map((x) => ({ ...x })); },
+  async trashRestore(ids) { await wait(400); trash = trash.filter((x) => !ids.includes(x.id)); return ids.length; },
+  async trashPurge(ids) { await wait(400); const b = trash.filter((x) => ids.includes(x.id)).reduce((a, x) => a + x.size, 0); trash = trash.filter((x) => !ids.includes(x.id)); used -= b; return b; },
+  async trashEmpty() { await wait(700); const b = trash.reduce((a, x) => a + x.size, 0); trash = []; used -= b; return b; },
+  openPrivacySettings: async () => {},
   async findDuplicates(_root, onProgress) {
     for (let i = 1; i <= 8; i++) { await wait(150); onProgress({ stage: i < 5 ? "listing" : "hashing", files: i * 52_000, bytes: i * 9 * GB }); }
     return { groups: dupes.map((g) => ({ ...g })), cloneSupported: true };

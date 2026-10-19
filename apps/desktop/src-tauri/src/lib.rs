@@ -332,6 +332,76 @@ async fn connect_test() -> R<usize> {
 }
 
 #[tauri::command]
+async fn trash_list() -> R<Vec<ebb_core::trashbin::TrashEntry>> {
+    tauri::async_runtime::spawn_blocking(|| {
+        Journal::open_default().and_then(|j| ebb_core::trashbin::list(&j))
+    })
+    .await
+    .map_err(err)?
+    .map_err(err)
+}
+
+#[tauri::command]
+async fn trash_restore(ids: Vec<String>) -> R<usize> {
+    tauri::async_runtime::spawn_blocking(move || {
+        Journal::open_default().and_then(|j| ebb_core::trashbin::restore(&j, &ids))
+    })
+    .await
+    .map_err(err)?
+    .map_err(err)
+}
+
+/// Kalıcı silme: yalnızca kullanıcı arayüzde onayladıktan sonra çağrılır.
+#[tauri::command]
+async fn trash_purge(ids: Vec<String>) -> R<u64> {
+    tauri::async_runtime::spawn_blocking(move || {
+        Journal::open_default().and_then(|j| ebb_core::trashbin::purge(&j, &ids))
+    })
+    .await
+    .map_err(err)?
+    .map_err(err)
+}
+
+#[tauri::command]
+async fn trash_empty() -> R<u64> {
+    tauri::async_runtime::spawn_blocking(|| {
+        Journal::open_default().and_then(|j| ebb_core::trashbin::empty(&j))
+    })
+    .await
+    .map_err(err)?
+    .map_err(err)
+}
+
+/// macOS: Gizlilik → Tam Disk Erişimi ayarını açar (Çöp Kutusu'nu okumak için gerekebilir).
+#[tauri::command]
+fn open_privacy_settings() -> R<()> {
+    #[cfg(target_os = "macos")]
+    return tauri_plugin_opener::open_url(
+        "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles",
+        None::<&str>,
+    )
+    .map_err(err);
+    #[cfg(not(target_os = "macos"))]
+    Ok(())
+}
+
+#[tauri::command]
+fn disk_history(days: u32) -> R<Vec<ebb_core::history::DiskSample>> {
+    Journal::open_default()
+        .and_then(|j| j.disk_history(days))
+        .map_err(err)
+}
+
+/// Yalnızca Ebb'in kendi sürüm sayfasını tarayıcıda açar.
+#[tauri::command]
+fn open_release(url: String) -> R<()> {
+    if !url.starts_with("https://github.com/ege-arhan/ebb/releases") {
+        return Err("only Ebb release pages can be opened".into());
+    }
+    tauri_plugin_opener::open_url(url, None::<&str>).map_err(err)
+}
+
+#[tauri::command]
 fn journal_items(plan_id: String) -> R<Vec<EntryRow>> {
     Journal::open_default()
         .and_then(|j| j.items(&plan_id))
@@ -431,6 +501,12 @@ fn build_tray(app: &tauri::App) -> tauri::Result<()> {
         let mut tick = 0u32;
         loop {
             if let Some(d) = ops::disk_usage() {
+                // Boş alan geçmişi (saatte bir örnek; fazlası yok sayılır).
+                if tick.is_multiple_of(10)
+                    && let Ok(j) = Journal::open_default()
+                {
+                    let _ = j.record_disk(d.total, d.free);
+                }
                 let line = format!("{} free of {}", human(d.free), human(d.total));
                 let _ = free.set_text(&line);
                 if let Some(tray) = handle.tray_by_id("main") {
@@ -492,6 +568,13 @@ pub fn run() {
             undo_plan,
             journal_list,
             journal_items,
+            disk_history,
+            trash_list,
+            trash_restore,
+            trash_purge,
+            trash_empty,
+            open_privacy_settings,
+            open_release,
             explain,
             mcp_command,
             connect_clients,

@@ -6,8 +6,8 @@ import { useApp } from "../state";
 /** Temizlik bittiğinde: çekilen alan sayılarak yükselir, halkalar yayılır, damlalar sıçrar. */
 export function Celebrate() {
   const { celebrate, celebrateKind, clearCelebrate, t } = useApp();
-  const word = celebrateKind === "optimize" ? t("won") : celebrateKind === "compress" ? t("savedWord") : t("ebbed");
-  const sub = celebrateKind === "optimize" ? t("wonSub") : celebrateKind === "compress" ? t("compressSub") : t("celebrateSub");
+  const word = celebrateKind === "optimize" ? t("won") : celebrateKind === "compress" ? t("savedWord") : celebrateKind === "freed" ? t("freedWord") : t("ebbed");
+  const sub = celebrateKind === "optimize" ? t("wonSub") : celebrateKind === "compress" ? t("compressSub") : celebrateKind === "freed" ? t("freedSub") : t("celebrateSub");
   const [x, setX] = useState(0);
   const drops = useMemo(
     () => Array.from({ length: 22 }, (_, i) => ({ i, dx: (Math.random() - 0.5) * 520, dy: -(120 + Math.random() * 260), d: Math.random() * 0.25, s: 4 + Math.random() * 7 })),

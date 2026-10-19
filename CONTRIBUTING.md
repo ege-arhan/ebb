@@ -26,4 +26,4 @@ Recipes live in `catalog/*.yaml`. One entry per cache, with paths per OS (`{home
 
 - `cargo fmt`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace` and `pnpm -C apps/desktop build` must pass.
 - The MCP server has no apply and no undo tool, on purpose. Do not add one.
-- No telemetry, no network calls except what the user starts.
+- No telemetry. The only automatic network call is the optional daily release check against api.github.com; keep it that way.

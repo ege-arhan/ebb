@@ -97,3 +97,67 @@ fn from_paths_blocks_before_measuring() {
     assert_eq!(p.skipped.len(), 2);
     assert!(t.elapsed().as_secs() < 5);
 }
+
+#[test]
+fn disk_history_samples_hourly() {
+    let d = tempfile::tempdir().unwrap();
+    let j = Journal::open(&d.path().join("j.db")).unwrap();
+    assert!(j.record_disk(1000, 400).unwrap());
+    assert!(
+        !j.record_disk(1000, 390).unwrap(),
+        "ikinci örnek aynı saat içinde atlanmalı"
+    );
+    let h = j.disk_history(30).unwrap();
+    assert_eq!(h.len(), 1);
+    assert_eq!(h[0].free, 400);
+}
+
+/// Gerçek Çöp Kutusu'nu kullanır ama yalnızca bu testin oluşturduğu geçici dosyalara dokunur.
+#[cfg(target_os = "macos")]
+#[test]
+fn trash_screen_lists_restores_and_purges_ebb_items() {
+    use ebb_core::trashbin;
+    let d = fixture();
+    let j = Journal::open(&d.path().join("j.db")).unwrap();
+    let keep = d.path().join("a/big.bin");
+    let gone = d.path().join("a/b/small.txt");
+    let plan = Plan::from_paths(&[keep.clone(), gone.clone()]);
+    j.save_plan(&plan).unwrap();
+    assert_eq!(j.apply(&plan.id).unwrap().failed, 0);
+
+    let mine: Vec<_> = trashbin::list(&j)
+        .unwrap()
+        .into_iter()
+        .filter(|e| e.by_ebb)
+        .collect();
+    assert_eq!(mine.len(), 2, "{mine:?}");
+    assert!(
+        mine.iter()
+            .all(|e| e.restorable && e.plan_id.as_deref() == Some(plan.id.as_str()))
+    );
+    let keep_id = mine
+        .iter()
+        .find(|e| e.name.starts_with("big"))
+        .unwrap()
+        .id
+        .clone();
+    let gone_id = mine
+        .iter()
+        .find(|e| e.name.starts_with("small"))
+        .unwrap()
+        .id
+        .clone();
+
+    assert_eq!(
+        trashbin::restore(&j, std::slice::from_ref(&keep_id)).unwrap(),
+        1
+    );
+    assert!(keep.exists());
+    assert!(trashbin::purge(&j, std::slice::from_ref(&gone_id)).unwrap() > 0);
+    assert!(!std::path::Path::new(&gone_id).exists());
+    assert!(
+        trashbin::purge(&j, &["/etc/hosts".to_string()]).is_err(),
+        "only Trash items can be purged"
+    );
+    assert_eq!(j.list(5).unwrap()[0].status, "purged");
+}

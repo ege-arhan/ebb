@@ -14,7 +14,13 @@
   <a href="https://github.com/ege-arhan/ebb/releases/latest"><img src="https://img.shields.io/github/v/release/ege-arhan/ebb?label=download" alt="release"></a>
   <img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="Apache-2.0">
   <img src="https://img.shields.io/badge/telemetry-none-brightgreen" alt="no telemetry">
+  <a href="https://github.com/ege-arhan/ebb/stargazers"><img src="https://img.shields.io/github/stars/ege-arhan/ebb?style=flat&logo=github&label=stars" alt="GitHub stars"></a>
+  <a href="https://github.com/ege-arhan/ebb/releases"><img src="https://img.shields.io/github/downloads/ege-arhan/ebb/total?label=downloads" alt="downloads"></a>
 </p>
+
+<!-- Trendshift: Ebb gets an id once it appears on GitHub Trending. Replace ID below and remove this comment.
+<p align="center"><a href="https://trendshift.io/repositories/ID" target="_blank"><img src="https://trendshift.io/api/badge/repositories/ID" alt="ege-arhan%2Febb | Trendshift" width="250" height="55"/></a></p>
+-->
 
 <p align="center">
   <img src="docs/screenshots/tide.png" alt="Ebb: the tide screen" width="860">
@@ -35,8 +41,10 @@
 - **Space back, nothing deleted.** Duplicate copies become copy-on-write clones that share disk blocks (APFS, Btrfs, XFS), like Mint's Optimize. Folders you rarely open can be compressed in place (APFS, NTFS) and decompressed any time.
 - **Finds the big stuff anywhere.** Large files you haven't opened in months, old installers in Downloads, plus 60+ cache recipes for browsers, dev tools, creative apps and the system.
 - **Honest speed-up.** A health score with plain tips, memory pressure, the heaviest apps (quit them like Cmd+Q), and the items that start with your computer (turn them off and on). No fake RAM boosters.
+- **A Trash you can see.** Everything Ebb cleans waits in the Trash first. Ebb shows what's there, restores its own items to where they came from, deletes selected items for good, or empties it, all from one screen.
+- **Watch the trend.** A small chart shows how your free space changed over the last week or month.
 - **Lives in your menu bar / tray.** Free space at a glance, quick actions, and closing the window keeps Ebb running.
-- **Free, with no limits and no telemetry.** Apache-2.0.
+- **Free, with no limits and no telemetry.** Apache-2.0. The only network call is an optional once-a-day check for a newer release on GitHub (turn it off in Settings).
 
 ## Install
 
@@ -66,6 +74,7 @@ ebb big                # large forgotten files and old installers
 ebb system             # health score, memory, heavy apps, tips
 ebb apps --quit Slack  # quit an app gracefully
 ebb startup            # items that start with your computer
+ebb trash              # what's in the Trash (--restore <id>, --empty)
 ebb connect            # connect your AI assistants
 ebb undo <plan-id>     # restore a cleanup
 ebb completions zsh    # shell completions
@@ -116,6 +125,17 @@ Layout: `crates/ebb-core` (scan, catalog, plan/journal, connect) · `crates/ebb-
 ## Safety, reviewed
 
 Two independent code reviews found 16 issues (protected-ancestor bypass, re-armed plans, symlink overwrites, MCP-triggered restore, concurrent config writes, …). All are fixed and pinned by tests in `crates/ebb-core/tests/review*.rs`. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/reviews](docs/reviews). Windows and Linux builds are verified by CI only; real-device reports are very welcome.
+
+## Star history
+
+<a href="https://star-history.com/#ege-arhan/ebb&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=ege-arhan/ebb&type=Date&theme=dark">
+    <img alt="Star history" src="https://api.star-history.com/svg?repos=ege-arhan/ebb&type=Date" width="600">
+  </picture>
+</a>
+
+If Ebb saved you some space, a ⭐ helps other people find it.
 
 ## License
 

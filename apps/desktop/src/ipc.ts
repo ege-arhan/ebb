@@ -29,6 +29,13 @@ const real: Api = {
   connectTest: () => invoke("connect_test"),
   journalItems: (planId) => invoke("journal_items", { planId }),
   reveal: (path) => invoke("reveal", { path }),
+  diskHistory: (days) => invoke("disk_history", { days }),
+  trashList: () => invoke("trash_list"),
+  trashRestore: (ids) => invoke("trash_restore", { ids }),
+  trashPurge: (ids) => invoke("trash_purge", { ids }),
+  trashEmpty: () => invoke("trash_empty"),
+  openPrivacySettings: () => invoke("open_privacy_settings"),
+  openRelease: (url) => invoke("open_release", { url }),
   findDuplicates(root, onProgress) {
     const ch = new Channel<DupProgress>();
     ch.onmessage = onProgress;

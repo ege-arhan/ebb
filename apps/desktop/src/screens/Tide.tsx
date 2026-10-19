@@ -1,12 +1,13 @@
-import { ArrowRight, Eye, History, ListChecks, Plug, Undo2 } from "lucide-react";
+import { ArrowRight, Eye, History, ListChecks, Plug, Trash2, Undo2 } from "lucide-react";
 import type { Screen } from "../App";
 import { Basin } from "../components/Basin";
 import { Skeleton, Stat } from "../components/Bits";
+import { History as DiskHistory } from "../components/History";
 import { ago, human, tilde } from "../format";
 import { useApp } from "../state";
 
 export function Tide({ go }: { go(s: Screen): void }) {
-  const { t, findings, ai, reclaimable, home, journal, lang, clients } = useApp();
+  const { t, findings, ai, reclaimable, home, journal, lang, clients, trashSize } = useApp();
   const top = (findings ?? []).filter((f) => f.safety === "safe").slice(0, 5);
   const review = (findings ?? []).filter((f) => f.safety === "review").reduce((a, f) => a + f.size, 0);
   const stores = (ai ?? []).slice(0, 4);
@@ -24,6 +25,14 @@ export function Tide({ go }: { go(s: Screen): void }) {
         <Stat tone="review" label={t("needsLook")} bytes={review} hint={t("needsLookHint")} onClick={() => go("clean")} />
         <Stat tone="ai" label={t("aiTools")} bytes={aiTotal} hint={t("aiHint")} onClick={() => go("agents")} />
       </div>
+
+      {trashSize > 500_000_000 && (
+        <button className="nudge" onClick={() => go("trash")}>
+          <span className="nudge-ico"><Trash2 size={20} aria-hidden /></span>
+          <span className="rowtext"><b>{t("trashNudge").replace("{size}", human(trashSize))}</b><small>{t("trashNudgeBody")}</small></span>
+          <ArrowRight size={18} aria-hidden />
+        </button>
+      )}
 
       {pending.length > 0 && (
         <button className="nudge" onClick={() => go("connect")}>
@@ -71,6 +80,8 @@ export function Tide({ go }: { go(s: Screen): void }) {
           )}
         </section>
       </div>
+
+      <DiskHistory />
 
       <section className="flow" aria-label={t("safeFlow")}>
         <h2>{t("safeFlow")}</h2>

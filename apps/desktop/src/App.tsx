@@ -1,9 +1,9 @@
-import { Bot, Command, Gauge, History, Layers, Plug, ScanSearch, Settings as Cog, ShieldCheck, Sparkles, Undo2, Waves } from "lucide-react";
+import { Bot, Command, Gauge, History, Layers, Plug, ScanSearch, Settings as Cog, ShieldCheck, Sparkles, Trash2, Undo2, Waves } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { Celebrate } from "./components/Celebrate";
 import { Modal, Palette, Toasts, type Cmd } from "./components/Overlay";
-import { inTauri } from "./ipc";
+import { api, inTauri } from "./ipc";
 import { human } from "./format";
 import { Agents } from "./screens/Agents";
 import { Clean } from "./screens/Clean";
@@ -14,13 +14,14 @@ import { Optimize } from "./screens/Optimize";
 import { Speed } from "./screens/Speed";
 import { Settings } from "./screens/Settings";
 import { Tide } from "./screens/Tide";
+import { Trash } from "./screens/Trash";
 import { useApp } from "./state";
 
-export type Screen = "tide" | "explore" | "clean" | "optimize" | "speed" | "agents" | "connect" | "journal" | "settings";
+export type Screen = "tide" | "explore" | "clean" | "optimize" | "speed" | "agents" | "connect" | "journal" | "trash" | "settings";
 const NAV = [
   { id: "tide", icon: Waves }, { id: "explore", icon: ScanSearch }, { id: "clean", icon: Sparkles }, { id: "optimize", icon: Layers },
   { id: "speed", icon: Gauge }, { id: "agents", icon: Bot },
-  { id: "connect", icon: Plug }, { id: "journal", icon: History }, { id: "settings", icon: Cog },
+  { id: "connect", icon: Plug }, { id: "journal", icon: History }, { id: "trash", icon: Trash2 }, { id: "settings", icon: Cog },
 ] as const;
 
 const isMac = navigator.platform.toLowerCase().includes("mac");
@@ -29,7 +30,7 @@ const fromHash = (): Screen => { const h = location.hash.slice(1); return (NAV.s
 const markSeen = () => { try { localStorage.setItem("ebb.welcome", "1"); } catch { /* yok say */ } };
 
 export default function App() {
-  const { t, setTheme, theme, disk, clients } = useApp();
+  const { t, setTheme, theme, disk, clients, update, trashSize } = useApp();
   const [screen, setScreen] = useState<Screen>(fromHash);
   const [palette, setPalette] = useState(false);
   const [startScan, setStartScan] = useState(() => location.search.includes("autoscan"));
@@ -96,9 +97,15 @@ export default function App() {
               {screen === id && <motion.span layoutId="navpill" className="navpill" transition={{ type: "spring", stiffness: 520, damping: 40 }} />}
               <Icon size={17} aria-hidden /> <span className="nav-label">{t(id)}</span>
               {id === "connect" && pending > 0 && <span className="dot" aria-label={`${pending}`}>{pending}</span>}
+              {id === "trash" && trashSize > 0 && <span className="dot soft">{human(trashSize, 0)}</span>}
             </button>
           ))}
         </nav>
+        {update && (
+          <button className="update-pill" onClick={() => api.openRelease(update.url)}>
+            <Sparkles size={14} aria-hidden /> <span>{t("updateAvail").replace("{v}", update.version)}</span> <b>{t("updateGet")}</b>
+          </button>
+        )}
         {disk && (
           <div className="mini-disk" title={`${human(disk.free)} ${t("free")} ${t("of")} ${human(disk.total)}`}>
             <span><b>{human(disk.free, 0)}</b> {t("free")}</span>
@@ -120,6 +127,7 @@ export default function App() {
               {screen === "agents" && <Agents go={setScreen} />}
               {screen === "connect" && <Connect />}
               {screen === "journal" && <Journal />}
+              {screen === "trash" && <Trash />}
               {screen === "settings" && <Settings />}
             </motion.div>
           )}

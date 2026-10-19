@@ -480,3 +480,19 @@ main { z-index: 1; }
 }
 /* hafiflik: pencere gizliyken süs animasyonları durur */
 html.idle .shell::before, html.idle .shell::after, html.idle .brand svg, html.idle .live i { animation-play-state: paused; }
+
+/* geçmiş grafiği ve güncelleme */
+.history { gap: 10px; } .hist-delta { font-size: 13.5px; } .hist-delta b { font-size: 18px; } .hist-delta b.up { color: var(--accent); } .hist-delta b.down { color: var(--amber); }
+.hist-svg { width: 100%; height: 120px; display: block; }
+.update-pill { display: flex; align-items: center; gap: 8px; margin: auto 2px 8px; padding: 9px 12px; border-radius: 10px; border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--line)); background: color-mix(in srgb, var(--accent) 14%, var(--surface)); color: var(--text); font-size: 12.5px; text-align: left; }
+.update-pill span { flex: 1; } .update-pill b { color: var(--accent); }
+.update-pill + .mini-disk { margin-top: 0; }
+.wrapsmall { white-space: normal !important; overflow: visible !important; font: 12.5px/1.5 var(--body) !important; max-width: 52ch; }
+
+/* çöp kutusu */
+.trash-sum { display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); }
+.trash-sum b { font: 600 30px var(--display); letter-spacing: -.02em; } .trash-ico { width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center; background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
+.row-main.trashrow { grid-template-columns: 1fr 90px auto; } .trashlist .chip { margin-left: 6px; vertical-align: 1px; }
+.btn.danger-solid { background: var(--danger); color: #fff; border-color: transparent; font-weight: 600; }
+.btn.danger.big { border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); }
+.dot.soft { background: color-mix(in srgb, var(--danger) 22%, transparent); color: var(--text); font-size: 10px; padding: 0 7px; }

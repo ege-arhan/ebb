@@ -196,6 +196,22 @@ enum Cmd {
         #[arg(long)]
         json: bool,
     },
+    /// What is in the Trash; restore Ebb's items or empty it.
+    Trash {
+        /// Restore these Trash ids (from `ebb trash --json`).
+        #[arg(long, num_args = 1..)]
+        restore: Vec<String>,
+        /// Permanently delete these Trash ids.
+        #[arg(long, num_args = 1..)]
+        purge: Vec<String>,
+        /// Empty the whole Trash (permanent).
+        #[arg(long)]
+        empty: bool,
+        #[arg(long)]
+        yes: bool,
+        #[arg(long)]
+        json: bool,
+    },
     /// Explain a path: size, catalog match, protection.
     Explain {
         path: PathBuf,
@@ -1351,6 +1367,78 @@ fn run() -> ebb_core::Result<()> {
                     );
                 });
             }
+        }
+        Cmd::Trash {
+            restore,
+            purge,
+            empty,
+            yes,
+            json,
+        } => {
+            let j = Journal::open_default()?;
+            if !restore.is_empty() {
+                let n = ebb_core::trashbin::restore(&j, &restore)?;
+                ui::ok(format!(
+                    "Restored {n} item{}",
+                    if n == 1 { "" } else { "s" }
+                ));
+                return Ok(());
+            }
+            if empty || !purge.is_empty() {
+                let what = if empty {
+                    "Empty the Trash".to_string()
+                } else {
+                    format!("Permanently delete {} item(s)", purge.len())
+                };
+                let go = yes
+                    || (ui::tty()
+                        && Confirm::with_theme(&ColorfulTheme::default())
+                            .with_prompt(format!("{what}? This cannot be undone."))
+                            .default(false)
+                            .interact()
+                            .unwrap_or(false));
+                if !go {
+                    println!("  Nothing changed. Add --yes to confirm.");
+                    return Ok(());
+                }
+                let bytes = if empty {
+                    ebb_core::trashbin::empty(&j)?
+                } else {
+                    ebb_core::trashbin::purge(&j, &purge)?
+                };
+                ui::ok(format!("{} freed", style(human(bytes)).green().bold()));
+                return Ok(());
+            }
+            let pb = spinner("Reading the Trash");
+            let items = ebb_core::trashbin::list(&j)?;
+            pb.finish_and_clear();
+            emit(json, &items, || {
+                let total: u64 = items.iter().map(|e| e.size).sum();
+                heading(&format!(
+                    "Trash  {} · {} items",
+                    style(human(total)).bold(),
+                    items.len()
+                ));
+                for e in items.iter().take(30) {
+                    let tag = if e.by_ebb {
+                        style("ebb ").cyan().to_string()
+                    } else {
+                        "    ".into()
+                    };
+                    println!(
+                        "   {:>9}  {}{:<34} {}",
+                        style(human(e.size)).bold(),
+                        tag,
+                        e.name,
+                        dim(e.original.as_ref().map(|o| tilde(o)).unwrap_or_default())
+                    );
+                }
+                println!(
+                    "\n  {}  restore (Ebb items)     {}  free the space\n",
+                    ui::cmd("ebb trash --restore <id>"),
+                    ui::cmd("ebb trash --empty")
+                );
+            });
         }
         Cmd::Completions { shell } => {
             clap_complete::generate(shell, &mut Cli::command(), "ebb", &mut std::io::stdout())

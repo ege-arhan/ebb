@@ -46,6 +46,10 @@ export interface StartupItem { id: string; name: string; path: string; scope: "u
 export interface Tip { id: string; severity: "good" | "info" | "warn" | "bad"; title: string; body: string; action: "clean" | "apps" | "startup" | "restart" | "optimize" | null }
 export interface Health { score: number; memory: MemoryInfo; disk_free_ratio: number; uptime_secs: number; startup_enabled: number; tips: Tip[] }
 
+export interface DiskSample { ts: number; total: number; free: number }
+
+export interface TrashEntry { id: string; name: string; size: number; deleted_at: number | null; original: string | null; by_ebb: boolean; plan_id: string | null; restorable: boolean }
+
 export interface Api {
   homeDir(): Promise<string>;
   locations(): Promise<Location[]>;
@@ -67,6 +71,13 @@ export interface Api {
   connectTest(): Promise<number>;
   journalItems(planId: string): Promise<EntryRow[]>;
   reveal(path: string): Promise<void>;
+  diskHistory(days: number): Promise<DiskSample[]>;
+  trashList(): Promise<TrashEntry[]>;
+  trashRestore(ids: string[]): Promise<number>;
+  trashPurge(ids: string[]): Promise<number>;
+  trashEmpty(): Promise<number>;
+  openPrivacySettings(): Promise<void>;
+  openRelease(url: string): Promise<void>;
   findDuplicates(root: string | null, onProgress: (p: DupProgress) => void): Promise<{ groups: DupGroup[]; cloneSupported: boolean }>;
   optimizeClones(groups: DupGroup[]): Promise<OptimizeReport>;
   compress(path: string): Promise<CompressReport>;

@@ -6,6 +6,7 @@ pub mod dupes;
 pub mod error;
 pub mod finders;
 pub mod guard;
+pub mod history;
 pub mod journal;
 pub mod ops;
 pub mod optimize;
@@ -14,6 +15,7 @@ pub mod platform;
 pub mod scan;
 pub mod snapshot;
 pub mod system;
+pub mod trashbin;
 
 pub use error::{Error, Result};
 
