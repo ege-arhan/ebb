@@ -18,6 +18,8 @@ fn ebb(home: &Path, args: &[&str]) -> (bool, String) {
     (out.status.success(), text)
 }
 
+// Windows: `dirs` ignores USERPROFILE (Known Folder API), so HOME cannot be isolated there; run these on Unix.
+#[cfg(not(windows))]
 #[test]
 fn connect_writes_preserves_and_removes() {
     let h = tempfile::tempdir().unwrap();
@@ -53,6 +55,8 @@ fn connect_writes_preserves_and_removes() {
     assert_eq!(v["mcpServers"]["other"]["command"], "x");
 }
 
+// Windows: `dirs` ignores USERPROFILE (Known Folder API), so HOME cannot be isolated there; run these on Unix.
+#[cfg(not(windows))]
 #[test]
 fn connect_refuses_invalid_json_without_touching_it() {
     let h = tempfile::tempdir().unwrap();
