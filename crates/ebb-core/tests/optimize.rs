@@ -3,6 +3,7 @@ use std::fs;
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
+#[cfg_attr(windows, allow(dead_code))]
 fn find(root: &Path) -> Vec<dupes::DupGroup> {
     dupes::find_duplicates(root, 1, &AtomicBool::new(false), |_| {}).unwrap()
 }
