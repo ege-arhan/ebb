@@ -1,5 +1,7 @@
 //! Independent review. Run `cargo build -p ebb-cli` before this integration suite.
 //! Every case runs in a child with isolated HOME/data/temp and an empty PATH.
+// Windows: `dirs` ignores HOME/USERPROFILE (Known Folder API), so these HOME-isolated cases cannot run there.
+#![cfg(not(windows))]
 use ebb_core::{
     catalog, connect,
     journal::Journal,
