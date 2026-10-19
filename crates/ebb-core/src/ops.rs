@@ -176,9 +176,19 @@ pub fn locations() -> Vec<Location> {
     };
     let home = dirs::home_dir();
     add("home", "Home", home.clone(), "home");
-    add("desktop", "Desktop", dirs::desktop_dir(), "folder");
+    add(
+        "desktop",
+        "Desktop",
+        dirs::desktop_dir().or_else(|| home.as_ref().map(|h| h.join("Desktop"))),
+        "folder",
+    );
     add("documents", "Documents", dirs::document_dir(), "folder");
-    add("downloads", "Downloads", dirs::download_dir(), "folder");
+    add(
+        "downloads",
+        "Downloads",
+        dirs::download_dir().or_else(|| home.as_ref().map(|h| h.join("Downloads"))),
+        "folder",
+    );
     add("pictures", "Pictures", dirs::picture_dir(), "folder");
     add("movies", "Movies", dirs::video_dir(), "folder");
     add("music", "Music", dirs::audio_dir(), "folder");
@@ -228,4 +238,16 @@ pub fn locations() -> Vec<Location> {
         }
     }
     out
+}
+
+/// İndirilenler ve Masaüstü: sistem bilmiyorsa (Linux'ta xdg-user-dirs yoksa) ev klasörü altındaki varsayılan adlar.
+pub fn download_and_desktop() -> Vec<PathBuf> {
+    let home = dirs::home_dir();
+    [
+        dirs::download_dir().or_else(|| home.as_ref().map(|h| h.join("Downloads"))),
+        dirs::desktop_dir().or_else(|| home.as_ref().map(|h| h.join("Desktop"))),
+    ]
+    .into_iter()
+    .flatten()
+    .collect()
 }

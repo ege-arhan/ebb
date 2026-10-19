@@ -311,10 +311,7 @@ fn execute(journal: &Journal, rule: &Rule) -> Result<RuleOutcome> {
             save_and_maybe_apply(journal, rule, Plan::from_findings(&found, &Select::Safe))
         }
         RuleKind::OldInstallers { min_age_days } => {
-            let dirs: Vec<PathBuf> = [dirs::download_dir(), dirs::desktop_dir()]
-                .into_iter()
-                .flatten()
-                .collect();
+            let dirs: Vec<PathBuf> = crate::ops::download_and_desktop();
             let items = installers_in(&dirs, *min_age_days);
             save_and_maybe_apply(journal, rule, Plan::new(items))
         }

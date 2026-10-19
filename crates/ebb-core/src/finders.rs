@@ -98,10 +98,7 @@ pub fn large_old_files(
 pub fn old_installers(min_age_days: u64) -> Vec<FoundFile> {
     let now = SystemTime::now();
     let mut out = vec![];
-    for dir in [dirs::download_dir(), dirs::desktop_dir()]
-        .into_iter()
-        .flatten()
-    {
+    for dir in crate::ops::download_and_desktop() {
         let Ok(rd) = std::fs::read_dir(&dir) else {
             continue;
         };
