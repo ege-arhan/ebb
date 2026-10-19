@@ -83,6 +83,17 @@ const clients: ClientInfo[] = [
 
 export const mockApi: Api = {
   homeDir: async () => HOME,
+  locations: async () => [
+    { id: "home", label: "Home", path: HOME, kind: "home" as const },
+    { id: "desktop", label: "Desktop", path: `${HOME}/Desktop`, kind: "folder" as const },
+    { id: "documents", label: "Documents", path: `${HOME}/Documents`, kind: "folder" as const },
+    { id: "downloads", label: "Downloads", path: `${HOME}/Downloads`, kind: "folder" as const },
+    { id: "developer", label: "Developer", path: `${HOME}/Developer`, kind: "folder" as const },
+    { id: "library", label: "Library", path: `${HOME}/Library`, kind: "folder" as const },
+    { id: "disk", label: "Whole disk", path: "/", kind: "disk" as const },
+    { id: "vol-Backup", label: "Backup", path: "/Volumes/Backup", kind: "volume" as const },
+  ],
+  pickFolder: async () => `${HOME}/Developer`,
   diskUsage: async () => ({ total, free: total - used, mount: "/" }),
   async scan(_p, onProgress) {
     for (let i = 1; i <= 12; i++) {

@@ -421,3 +421,25 @@ main { z-index: 1; }
   .shell::before, .shell::after, .brand svg, .sonar i, .sonar b, .ring, .drop, .live i, .progress i::after { animation: none !important; }
   .page > * { animation: none !important; }
 }
+
+/* keşfet: konum seçici */
+.where { display: grid; gap: 14px; padding-top: 6px; } .where h1 { margin-bottom: 4px; } .where .lead { margin: -4px 0 8px; color: var(--muted); max-width: 60ch; }
+.locgrid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.locgrid li { animation: rise .5s cubic-bezier(.2, .8, .2, 1) both; }
+.locgrid button { width: 100%; display: flex; align-items: center; gap: 14px; text-align: left; padding: 16px; border-radius: var(--r); border: 1px solid var(--line); background: var(--surface); transition: transform .18s, border-color .18s, box-shadow .18s; position: relative; overflow: hidden; }
+.locgrid button:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--accent) 60%, var(--line)); box-shadow: 0 18px 36px -22px color-mix(in srgb, var(--accent) 70%, transparent); }
+.locgrid button.choose { border-style: dashed; background: color-mix(in srgb, var(--accent) 6%, var(--surface)); }
+.loc-ico { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; flex: none; background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); }
+.locgrid .rowtext small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recents { display: grid; gap: 8px; margin-top: 8px; } .recents p:last-child { display: flex; flex-wrap: wrap; gap: 8px; }
+.chipbtn { padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); font: 12px var(--mono); color: var(--muted); } .chipbtn:hover { color: var(--text); border-color: var(--accent); }
+.locbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.locchips { display: flex; gap: 6px; flex: 1; min-width: 0; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.locchips button { flex: none; padding: 6px 13px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); }
+.locchips button[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 18%, var(--surface)); color: var(--text); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); font-weight: 600; }
+.locchips button:disabled { opacity: .6; }
+
+.promptcard { display: grid; gap: 14px; padding: 20px 22px; border-radius: var(--r); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, var(--surface)), var(--surface)); box-shadow: var(--shadow); }
+.promptcard h2 { font: 600 20px var(--display); letter-spacing: -.01em; margin-bottom: 4px; }
+.promptbox { margin: 0; padding: 14px 16px; border-radius: 12px; background: var(--bg); border: 1px dashed var(--line); font: 13px/1.6 var(--mono); white-space: pre-wrap; word-break: break-word; }
+.promptfoot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }

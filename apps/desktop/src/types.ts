@@ -33,8 +33,12 @@ export interface ClientInfo {
 export interface Outcome { id: string; changed: string | null; backup: string | null; note: string }
 export interface EntryRow { original: string; size: number; status: string; error: string | null }
 
+export interface Location { id: string; label: string; path: string; kind: "home" | "folder" | "disk" | "volume" }
+
 export interface Api {
   homeDir(): Promise<string>;
+  locations(): Promise<Location[]>;
+  pickFolder(): Promise<string | null>;
   diskUsage(): Promise<DiskUsage | null>;
   scan(path: string | null, onProgress: (p: Progress) => void): Promise<Node>;
   cancelScan(): Promise<void>;

@@ -1,0 +1,7 @@
+# Ebb
+
+> Open-source disk cleaner and AI-storage viewer for macOS, Windows and Linux. Exposes a local MCP server so AI assistants can inspect disk usage and plan (never apply) cleanups.
+
+- [AI setup instructions](https://raw.githubusercontent.com/ege-arhan/ebb/main/docs/AI-SETUP.md): install the CLI and connect the user's assistants
+- [README](https://raw.githubusercontent.com/ege-arhan/ebb/main/README.md)
+- [Architecture and safety model](https://raw.githubusercontent.com/ege-arhan/ebb/main/docs/ARCHITECTURE.md)

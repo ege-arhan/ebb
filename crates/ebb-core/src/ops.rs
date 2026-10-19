@@ -148,3 +148,84 @@ pub fn disk_usage() -> Option<DiskUsage> {
             mount: d.mount_point().to_string_lossy().into_owned(),
         })
 }
+
+#[derive(Serialize, Debug, Clone)]
+pub struct Location {
+    pub id: String,
+    pub label: String,
+    pub path: PathBuf,
+    /// "home" | "folder" | "disk" | "volume"
+    pub kind: &'static str,
+}
+
+/// Taranabilecek yaygın konumlar (yalnızca var olanlar): ev, standart klasörler, geliştirici klasörleri,
+/// sistem diski ve takılı harici diskler. Kullanıcı yol yazmak zorunda kalmaz.
+pub fn locations() -> Vec<Location> {
+    let mut out: Vec<Location> = vec![];
+    let mut add = |id: &str, label: &str, p: Option<PathBuf>, kind: &'static str| {
+        if let Some(p) = p.filter(|p| p.is_dir())
+            && !out.iter().any(|l| l.path == p)
+        {
+            out.push(Location {
+                id: id.into(),
+                label: label.into(),
+                path: p,
+                kind,
+            });
+        }
+    };
+    let home = dirs::home_dir();
+    add("home", "Home", home.clone(), "home");
+    add("desktop", "Desktop", dirs::desktop_dir(), "folder");
+    add("documents", "Documents", dirs::document_dir(), "folder");
+    add("downloads", "Downloads", dirs::download_dir(), "folder");
+    add("pictures", "Pictures", dirs::picture_dir(), "folder");
+    add("movies", "Movies", dirs::video_dir(), "folder");
+    add("music", "Music", dirs::audio_dir(), "folder");
+    if let Some(h) = &home {
+        for (id, name) in [
+            ("developer", "Developer"),
+            ("projects", "Projects"),
+            ("code", "Code"),
+            ("dev", "dev"),
+            ("src", "src"),
+            ("repos", "repos"),
+        ] {
+            add(id, name, Some(h.join(name)), "folder");
+        }
+        #[cfg(target_os = "macos")]
+        add("library", "Library", Some(h.join("Library")), "folder");
+        #[cfg(target_os = "linux")]
+        {
+            add("cache", ".cache", Some(h.join(".cache")), "folder");
+            add("local", ".local", Some(h.join(".local")), "folder");
+        }
+    }
+    #[cfg(windows)]
+    {
+        add(
+            "appdata",
+            "AppData",
+            dirs::data_local_dir().and_then(|p| p.parent().map(|x| x.to_path_buf())),
+            "folder",
+        );
+        add("disk", "System drive", Some(PathBuf::from(r"C:\")), "disk");
+    }
+    #[cfg(not(windows))]
+    {
+        add("disk", "Whole disk", Some(PathBuf::from("/")), "disk");
+        for base in ["/Volumes", "/media", "/mnt"] {
+            if let Ok(rd) = std::fs::read_dir(base) {
+                for e in rd.flatten() {
+                    let p = e.path();
+                    // /Volumes/Macintosh HD gibi sistem diskine giden symlink'leri atla.
+                    if p.is_dir() && !e.file_type().is_ok_and(|t| t.is_symlink()) {
+                        let name = e.file_name().to_string_lossy().into_owned();
+                        add(&format!("vol-{name}"), &name, Some(p), "volume");
+                    }
+                }
+            }
+        }
+    }
+    out
+}

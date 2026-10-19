@@ -31,6 +31,25 @@ fn err(e: impl ToString) -> String {
 }
 
 #[tauri::command]
+fn locations() -> Vec<ops::Location> {
+    ops::locations()
+}
+
+/// Yerel klasör seçici (yol yazmaya gerek kalmaz).
+#[tauri::command]
+async fn pick_folder(app: tauri::AppHandle) -> Option<String> {
+    use tauri_plugin_dialog::DialogExt;
+    let (tx, rx) = std::sync::mpsc::channel();
+    app.dialog().file().pick_folder(move |p| {
+        let _ = tx.send(p.map(|f| f.to_string()));
+    });
+    tauri::async_runtime::spawn_blocking(move || rx.recv().ok().flatten())
+        .await
+        .ok()
+        .flatten()
+}
+
+#[tauri::command]
 fn home_dir() -> String {
     dirs::home_dir()
         .unwrap_or_default()
@@ -327,6 +346,7 @@ fn build_tray(app: &tauri::App) -> tauri::Result<()> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(AppState::default())
         .setup(|app| {
             build_tray(app)?;
@@ -341,6 +361,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             home_dir,
+            locations,
+            pick_folder,
             disk_usage,
             scan,
             cancel_scan,

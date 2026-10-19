@@ -59,6 +59,21 @@ ebb completions zsh    # shell completions
 
 Every command takes `--json`. `ebb apply <id>` and non-interactive `ebb clean` need `--yes`.
 
+## Connect your AI with one prompt
+
+No terminal or code needed. Paste this into Claude, ChatGPT, Codex, Cursor, or any assistant that can run commands:
+
+```text
+Set up Ebb (an open-source disk cleaner) for me. Read https://raw.githubusercontent.com/ege-arhan/ebb/main/docs/AI-SETUP.md and follow it exactly: install the ebb CLI for my operating system, run `ebb connect --all`, confirm it worked, and tell me what to restart. Never run `ebb apply` or `ebb clean --yes`.
+```
+
+Prefer to do it yourself? One line:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ege-arhan/ebb/main/install.sh | sh -s -- --connect     # macOS / Linux
+irm https://raw.githubusercontent.com/ege-arhan/ebb/main/install.ps1 | iex; ebb connect --all       # Windows (PowerShell)
+```
+
 ## Connect AI in one step
 
 ```bash

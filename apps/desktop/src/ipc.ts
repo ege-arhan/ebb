@@ -6,6 +6,8 @@ export const inTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in
 
 const real: Api = {
   homeDir: () => invoke("home_dir"),
+  locations: () => invoke("locations"),
+  pickFolder: () => invoke("pick_folder"),
   diskUsage: () => invoke("disk_usage"),
   scan(path, onProgress) {
     const ch = new Channel<Progress>();

@@ -105,3 +105,18 @@ pub fn restore_item(original: &Path, _trashed: Option<&Path>) -> Result<()> {
     }
     trash::os_limited::restore_all(hits).map_err(|e| Error::Trash(e.to_string()))
 }
+
+/// Windows'ta `canonicalize` `\\?\C:\…` döndürür; Geri Dönüşüm Kutusu kaydı ise düz `C:\…` tutar.
+/// Günlüğe düz biçim yazılır ki geri yüklerken eşleşsin. Diğer sistemlerde değişmez.
+pub fn simplify(p: PathBuf) -> PathBuf {
+    #[cfg(windows)]
+    {
+        let s = p.to_string_lossy();
+        if let Some(rest) = s.strip_prefix(r"\\?\")
+            && !rest.starts_with("UNC\\")
+        {
+            return PathBuf::from(rest);
+        }
+    }
+    p
+}

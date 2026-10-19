@@ -128,7 +128,8 @@ impl Journal {
         };
         for it in &plan.items {
             // Günlüğe, taşımadan ÖNCE çözümlenmiş (symlink'siz) yol yazılır: geri alırken zincir değiştiyse fark edilir.
-            let canon = it.path.canonicalize().unwrap_or_else(|_| it.path.clone());
+            let canon =
+                platform::simplify(it.path.canonicalize().unwrap_or_else(|_| it.path.clone()));
             let res = guard::check(&it.path).and_then(|()| platform::trash_item(&it.path));
             let (status, trashed, err) = match &res {
                 Ok(t) => (

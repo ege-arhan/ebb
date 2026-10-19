@@ -1,4 +1,4 @@
-import { Bot, Check, CircleAlert, Cpu, FileCode2, Loader2, MessageSquare, Plug, ShieldCheck, ShieldX, Unplug } from "lucide-react";
+import { Bot, Check, ClipboardCopy, CircleAlert, Cpu, FileCode2, Loader2, MessageSquare, Plug, ShieldCheck, ShieldX, Unplug } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { PageHead, Snippet } from "../components/Bits";
@@ -10,6 +10,8 @@ import type { ClientInfo } from "../types";
 const KIND_ICON = { agent: Bot, chat: MessageSquare, editor: FileCode2, local: Cpu } as const;
 const ORDER: ClientInfo["kind"][] = ["agent", "chat", "local", "editor"];
 type Test = { s: "idle" | "run" | "ok" | "fail"; n?: number; err?: string };
+
+const PROMPT = "Set up Ebb (an open-source disk cleaner) for me. Read https://raw.githubusercontent.com/ege-arhan/ebb/main/docs/AI-SETUP.md and follow it exactly: install the ebb CLI for my operating system, run `ebb connect --all`, confirm it worked, and tell me what to restart. Never run `ebb apply` or `ebb clean --yes`.";
 
 export function Connect() {
   const { t, clients, refreshClients, toast } = useApp();
@@ -54,6 +56,18 @@ export function Connect() {
           {busy ? <Loader2 size={16} className="spin" aria-hidden /> : <Plug size={16} aria-hidden />} {t("connectAll")}{pending.length ? ` (${pending.length})` : ""}
         </button>
       </PageHead>
+
+      <section className="promptcard">
+        <div className="rowtext">
+          <h2>{t("promptTitle")}</h2>
+          <p className="muted">{t("promptBody")}</p>
+        </div>
+        <pre className="promptbox">{PROMPT}</pre>
+        <div className="promptfoot">
+          <small className="muted">{t("promptNote")}</small>
+          <button className="btn primary" onClick={() => navigator.clipboard?.writeText(PROMPT).then(() => toast(t("copied"))).catch(() => {})}><ClipboardCopy size={15} aria-hidden /> {t("promptCopy")}</button>
+        </div>
+      </section>
 
       <ol className="steps">
         {([["step1", "step1b"], ["step2", "step2b"], ["step3", "step3b"]] as [Key, Key][]).map(([a, b], i) => (
