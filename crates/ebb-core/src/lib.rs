@@ -10,6 +10,7 @@ pub mod plan;
 pub mod platform;
 pub mod scan;
 pub mod snapshot;
+pub mod system;
 
 pub use error::{Error, Result};
 
