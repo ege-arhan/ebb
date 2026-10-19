@@ -13,6 +13,8 @@ pub mod ops;
 pub mod optimize;
 pub mod plan;
 pub mod platform;
+pub mod projects;
+pub mod prune;
 pub mod scan;
 pub mod snapshot;
 pub mod system;
