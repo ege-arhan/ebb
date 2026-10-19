@@ -90,6 +90,20 @@ impl Journal {
     }
 
     pub fn save_rule(&self, r: &Rule) -> Result<()> {
+        // Kalıcı silme sınırı: Çöp'te 7 günden kısa bekleyenler otomatik silinemez; alt sınırlar zorlanır.
+        let mut r = r.clone();
+        match &mut r.kind {
+            RuleKind::TrashOlderThan { days } => *days = (*days).max(7),
+            RuleKind::LargeOld {
+                min_mb,
+                min_age_days,
+            } => {
+                *min_mb = (*min_mb).max(50);
+                *min_age_days = (*min_age_days).max(30);
+            }
+            RuleKind::SafeCaches | RuleKind::OldInstallers { .. } => {}
+        }
+        let r = &r;
         self.ensure_rules()?;
         self.conn.execute(
             "INSERT INTO rules(id,body) VALUES(?1,?2) ON CONFLICT(id) DO UPDATE SET body=excluded.body",

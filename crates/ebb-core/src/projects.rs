@@ -119,6 +119,15 @@ fn idle_days(project: &Path, skip: &HashSet<&str>) -> u64 {
             let name = e.file_name().to_string_lossy().into_owned();
             if name != ".git" && !skip.contains(name.as_str()) {
                 bump(&e.path());
+                // Kaynak klasörlerin içindeki düzenlemeler de projenin canlı olduğunu gösterir (git yoksa özellikle).
+                if e.file_type().is_ok_and(|t| t.is_dir())
+                    && !name.starts_with('.')
+                    && let Ok(sub) = std::fs::read_dir(e.path())
+                {
+                    for s in sub.flatten().take(400) {
+                        bump(&s.path());
+                    }
+                }
             }
         }
     }
@@ -142,9 +151,10 @@ fn dirty_git(p: &Path) -> bool {
         use std::os::windows::process::CommandExt;
         c.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
     }
+    // git çalışmazsa proje "kirli" sayılır (güvenli taraf).
     c.output()
-        .map(|o| o.status.success() && !o.stdout.is_empty())
-        .unwrap_or(false)
+        .map(|o| !o.status.success() || !o.stdout.is_empty())
+        .unwrap_or(true)
 }
 
 /// Basit paralel map: sıra korunur, iş parçacığı sayısı çekirdek kadar.

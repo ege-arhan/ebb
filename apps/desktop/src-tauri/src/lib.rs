@@ -641,6 +641,15 @@ fn build_tray(app: &tauri::App) -> tauri::Result<()> {
                     let now = ebb_core::plan::now();
                     for o in ebb_core::autocare::run_due(&j, now, free_pct) {
                         let _ = handle.emit("ebb://care", &o);
+                        {
+                            use tauri_plugin_notification::NotificationExt;
+                            let _ = handle
+                                .notification()
+                                .builder()
+                                .title("Ebb · Auto Care")
+                                .body(&o.message)
+                                .show();
+                        }
                     }
                 }
                 let line = format!("{} free of {}", human(d.free), human(d.total));
@@ -680,6 +689,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_notification::init())
         .manage(AppState::default())
         .setup(|app| {
             build_tray(app)?;

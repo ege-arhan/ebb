@@ -129,21 +129,36 @@ fn strip_known_ext(name: &str) -> &str {
     name
 }
 
-/// `needle`, `hay` içinde '.' sınırlarında geçiyor mu? (`com.a.B` ≠ `com.a.BX`)
-fn has_id(hay: &str, needle: &str) -> bool {
-    let (h, n) = (hay.to_lowercase(), needle.to_lowercase());
-    let mut from = 0;
-    while let Some(i) = h.get(from..).and_then(|t| t.find(&n)) {
-        let s = from + i;
-        let e = s + n.len();
-        let before = s == 0 || h.as_bytes()[s - 1] == b'.';
-        let after = e == h.len() || h.as_bytes()[e] == b'.';
-        if before && after {
-            return true;
-        }
-        from = s + 1;
+/// Paket kimliği eşleşmesi: tam eşleşme ve `TAKIM.kimlik` (Group Containers) kesin; `kimlik.xxx` ön ekleri
+/// (örn. com.google.Chrome.canary) başka bir üründen olabilir; yalnızca bilinen yardımcı sonekleri eşleşir.
+fn id_match(fname: &str, stem: &str, needle: &str) -> Option<&'static str> {
+    let n = needle.to_lowercase();
+    let (f, s) = (fname.to_lowercase(), stem.to_lowercase());
+    let suffix = format!(".{n}");
+    if f == n || s == n || f.ends_with(&suffix) || s.ends_with(&suffix) {
+        return Some("high");
     }
-    false
+    // Yalnızca bilinen yardımcı soneklerine izin ver (com.x.App.helper); başka ürünler (…Chrome.canary) eşleşmez.
+    let prefix = format!("{n}.");
+    let rest = s
+        .strip_prefix(&prefix)
+        .or_else(|| f.strip_prefix(&prefix))?;
+    let first = rest.split('.').next().unwrap_or("");
+    const HELPERS: &[&str] = &[
+        "helper",
+        "agent",
+        "loginitem",
+        "updater",
+        "shipit",
+        "service",
+        "xpc",
+        "daemon",
+        "renderer",
+        "gpu",
+        "plugin",
+        "savedstate",
+    ];
+    HELPERS.contains(&first).then_some("high")
 }
 
 /// Kullanıcının yazabildiği bir yol mu? (Çöp kutusuna taşıma ayrıcalık gerektirmesin.)
@@ -286,8 +301,9 @@ pub fn leftovers_in(roots: &LeftoverRoots, name: &str, bundle_id: Option<&str>) 
                 continue;
             }
             let stem = strip_known_ext(&fname);
-            let conf = if bid.is_some_and(|b| has_id(&fname, b) || has_id(stem, b)) {
-                "high"
+            let id_conf = bid.and_then(|b| id_match(&fname, stem, b));
+            let conf = if let Some(c) = id_conf {
+                c
             } else if by_name && norm(stem) == nn {
                 "medium"
             } else {

@@ -136,7 +136,7 @@ fn call(name: &str, a: &Value) -> Result<Value, String> {
                 .ok_or("no home folder")?;
             let mut g = ebb_core::dupes::find_duplicates(
                 &root,
-                n("min_mb", 1) as u64 * 1_000_000,
+                (n("min_mb", 1) as u64).saturating_mul(1_000_000),
                 &std::sync::atomic::AtomicBool::new(false),
                 |_| {},
             )
@@ -163,7 +163,7 @@ fn call(name: &str, a: &Value) -> Result<Value, String> {
                 .ok_or("no home folder")?;
             let large = ebb_core::finders::large_old_files(
                 &root,
-                n("min_mb", 200) as u64 * 1_000_000,
+                (n("min_mb", 200) as u64).saturating_mul(1_000_000),
                 n("days", 180) as u64,
                 40,
                 &std::sync::atomic::AtomicBool::new(false),

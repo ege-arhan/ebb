@@ -121,7 +121,9 @@ const DEFS: &[Def] = &[
 fn command_for(d: &Def, step: &[&str]) -> Option<Command> {
     let bin = find_cli(d.bin)?;
     let mut c = Command::new(bin);
+    // Güvenilmeyen bir klasördeki .npmrc/.yarnrc araçları yönlendirmesin: komutlar ev klasöründen çalışır.
     c.args(step)
+        .current_dir(dirs::home_dir().unwrap_or_else(std::env::temp_dir))
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());

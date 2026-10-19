@@ -26,7 +26,6 @@ fn protected_roots() -> Vec<PathBuf> {
             "/lib",
             "/lib64",
             "/opt",
-            "/Applications",
             "/private/etc",
         ]
         .map(PathBuf::from)
@@ -59,6 +58,7 @@ fn exact_only() -> Vec<PathBuf> {
         h.clone(),
         PathBuf::from("/"),
         PathBuf::from("/Users"),
+        PathBuf::from("/Applications"),
         PathBuf::from("/home"),
         PathBuf::from("/var"),
         PathBuf::from("/tmp"),
@@ -129,6 +129,7 @@ fn dirty_git(p: &Path) -> bool {
         .args(["status", "--porcelain", "--"])
         .arg(p)
         .output()
-        .map(|o| o.status.success() && !o.stdout.is_empty())
-        .unwrap_or(false)
+        // git çalışmazsa depo "kirli" sayılır (güvenli taraf): .git var ama durum okunamıyorsa dokunma.
+        .map(|o| !o.status.success() || !o.stdout.is_empty())
+        .unwrap_or(true)
 }

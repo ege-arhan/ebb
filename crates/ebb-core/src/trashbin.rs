@@ -143,15 +143,23 @@ pub fn list(journal: &Journal) -> Result<Vec<TrashEntry>> {
 #[cfg(target_os = "macos")]
 fn in_trash(id: &str) -> Result<PathBuf> {
     let dir = trash_dir()?.canonicalize().map_err(denied)?;
-    let p = PathBuf::from(id);
-    let parent = p.parent().and_then(|x| x.canonicalize().ok());
-    if parent.as_deref() != Some(dir.as_path())
-        || p.file_name().is_none()
-        || p.symlink_metadata().is_err()
-    {
-        return Err(Error::Guard(format!("{id} is not an item in the Trash")));
+    let bad = || Error::Guard(format!("{id} is not an item in the Trash"));
+    // Sondaki ayraç (`link/`) symlink'i izletip hedefindeki dosyaları silmeye yol açardı.
+    if id.ends_with('/') || id.ends_with('\\') {
+        return Err(bad());
     }
-    Ok(p)
+    let p = PathBuf::from(id);
+    let name = p
+        .file_name()
+        .filter(|n| *n != "." && *n != "..")
+        .ok_or_else(bad)?;
+    if p.parent().and_then(|x| x.canonicalize().ok()).as_deref() != Some(dir.as_path()) {
+        return Err(bad());
+    }
+    // İşlemler hep Çöp'ün kendi (çözümlenmiş) klasöründen kurulan yol üzerinde yapılır.
+    let joined = dir.join(name);
+    joined.symlink_metadata().map_err(|_| bad())?;
+    Ok(joined)
 }
 
 #[cfg(target_os = "macos")]
