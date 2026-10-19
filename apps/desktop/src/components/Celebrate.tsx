@@ -14,6 +14,7 @@ export function Celebrate() {
   );
   useEffect(() => {
     if (!celebrate) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) setX(celebrate);
     const c = animate(0, celebrate, { duration: 1.5, ease: [0.16, 1, 0.3, 1], onUpdate: setX });
     const id = setTimeout(clearCelebrate, 4600);
     return () => { c.stop(); clearTimeout(id); };

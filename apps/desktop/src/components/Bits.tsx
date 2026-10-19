@@ -48,7 +48,8 @@ export function useCountUp(value: number, seconds = 0.7) {
   const [x, setX] = useState(value);
   const from = useRef(value);
   useEffect(() => {
-    const c = animate(from.current, value, { duration: reduce ? 0 : seconds, ease: "easeOut", onUpdate: (v) => { from.current = v; setX(v); } });
+    if (reduce) { from.current = value; setX(value); return; }
+    const c = animate(from.current, value, { duration: seconds, ease: "easeOut", onUpdate: (v) => { from.current = v; setX(v); } });
     return () => c.stop();
   }, [value, seconds, reduce]);
   return x;

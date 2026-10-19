@@ -35,7 +35,7 @@ const read = (k: string) => { try { return localStorage.getItem(k); } catch { re
 const write = (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* özel pencere vb. */ } };
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangS] = useState<Lang>(() => (read("ebb.lang") as Lang) || (navigator.language.startsWith("tr") ? "tr" : "en"));
+  const [lang, setLangS] = useState<Lang>(() => (new URLSearchParams(location.search).get("lang") as Lang) || (read("ebb.lang") as Lang) || (navigator.language.startsWith("tr") ? "tr" : "en"));
   const [theme, setThemeS] = useState<Theme>(() => (read("ebb.theme") as Theme) || "system");
   const [home, setHome] = useState("");
   const [disk, setDisk] = useState<DiskUsage | null>(null);
