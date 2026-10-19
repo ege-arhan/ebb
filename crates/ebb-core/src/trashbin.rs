@@ -3,7 +3,7 @@
 use crate::{Error, Result, journal::Journal, scan::measure};
 use rusqlite::params;
 use serde::Serialize;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 #[derive(Serialize, Clone, Debug)]
 pub struct TrashEntry {
@@ -165,7 +165,7 @@ pub fn restore(journal: &Journal, ids: &[String]) -> Result<usize> {
                 p.display()
             ))
         })?;
-        crate::platform::restore_item(Path::new(&original), Some(&p))?;
+        crate::platform::restore_item(std::path::Path::new(&original), Some(&p))?;
         journal.settle(eid, &plan, "undone");
         n += 1;
     }
