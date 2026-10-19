@@ -11,8 +11,11 @@ const browser = await puppeteer.launch({ executablePath: chrome, headless: "new"
 try {
   const page = await browser.newPage();
   const errors = [];
+  // Güncelleme kontrolü ağa çıkar; testte dış istekleri kes (GitHub hız sınırı 403 verebilir).
+  await page.setRequestInterception(true);
+  page.on("request", (r) => (r.url().startsWith("http://localhost") || r.url().startsWith("data:") ? r.continue() : r.abort()));
   page.on("pageerror", (e) => errors.push(String(e)));
-  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  page.on("console", (m) => { if (m.type() === "error" && !m.text().includes("ERR_FAILED")) errors.push(m.text()); });
   await page.goto("http://localhost:4179/?nowelcome&lang=en", { waitUntil: "networkidle0" });
   const ids = await page.$$eval(".rail nav button", (b) => b.length);
   for (let i = 0; i < ids; i++) {
