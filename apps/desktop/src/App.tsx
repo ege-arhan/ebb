@@ -1,27 +1,36 @@
-import { Bot, Command, Gauge, History, Layers, Plug, ScanSearch, Settings as Cog, ShieldCheck, Sparkles, Trash2, Undo2, Waves } from "lucide-react";
+import { AppWindow, Bot, CalendarClock, Command, Gauge, Hammer, History, Layers, MessageCircle, Plug, ScanSearch, Settings as Cog, ShieldCheck, Sparkles, Trash2, Undo2, Waves } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, Suspense, lazy, useEffect, useMemo, useState } from "react";
+import type { Key } from "./i18n";
 import { Celebrate } from "./components/Celebrate";
 import { Modal, Palette, Toasts, type Cmd } from "./components/Overlay";
 import { api, inTauri } from "./ipc";
 import { human } from "./format";
-import { Agents } from "./screens/Agents";
-import { Clean } from "./screens/Clean";
-import { Connect } from "./screens/Connect";
 import { Explore } from "./screens/Explore";
-import { Journal } from "./screens/Journal";
-import { Optimize } from "./screens/Optimize";
-import { Speed } from "./screens/Speed";
-import { Settings } from "./screens/Settings";
 import { Tide } from "./screens/Tide";
-import { Trash } from "./screens/Trash";
 import { useApp } from "./state";
 
-export type Screen = "tide" | "explore" | "clean" | "optimize" | "speed" | "agents" | "connect" | "journal" | "trash" | "settings";
+// Ekranlar ihtiyaç olunca yüklenir: ilk açılış hafif kalır.
+const Agents = lazy(() => import("./screens/Agents").then((m) => ({ default: m.Agents })));
+const Apps = lazy(() => import("./screens/Apps").then((m) => ({ default: m.Apps })));
+const Assistant = lazy(() => import("./screens/Assistant").then((m) => ({ default: m.Assistant })));
+const Care = lazy(() => import("./screens/Care").then((m) => ({ default: m.Care })));
+const Dev = lazy(() => import("./screens/Dev").then((m) => ({ default: m.Dev })));
+const Clean = lazy(() => import("./screens/Clean").then((m) => ({ default: m.Clean })));
+const Connect = lazy(() => import("./screens/Connect").then((m) => ({ default: m.Connect })));
+const Journal = lazy(() => import("./screens/Journal").then((m) => ({ default: m.Journal })));
+const Optimize = lazy(() => import("./screens/Optimize").then((m) => ({ default: m.Optimize })));
+const Settings = lazy(() => import("./screens/Settings").then((m) => ({ default: m.Settings })));
+const Speed = lazy(() => import("./screens/Speed").then((m) => ({ default: m.Speed })));
+const Trash = lazy(() => import("./screens/Trash").then((m) => ({ default: m.Trash })));
+
+export type Screen = "tide" | "explore" | "clean" | "optimize" | "speed" | "apps" | "dev" | "care" | "assistant" | "agents" | "connect" | "journal" | "trash" | "settings";
 const NAV = [
-  { id: "tide", icon: Waves }, { id: "explore", icon: ScanSearch }, { id: "clean", icon: Sparkles }, { id: "optimize", icon: Layers },
-  { id: "speed", icon: Gauge }, { id: "agents", icon: Bot },
-  { id: "connect", icon: Plug }, { id: "journal", icon: History }, { id: "trash", icon: Trash2 }, { id: "settings", icon: Cog },
+  { id: "tide", icon: Waves, group: "navOverview" }, { id: "explore", icon: ScanSearch },
+  { id: "clean", icon: Sparkles, group: "navClean" }, { id: "optimize", icon: Layers }, { id: "apps", icon: AppWindow }, { id: "dev", icon: Hammer }, { id: "trash", icon: Trash2 },
+  { id: "speed", icon: Gauge, group: "navSystem" }, { id: "care", icon: CalendarClock },
+  { id: "agents", icon: Bot, group: "navAi" }, { id: "assistant", icon: MessageCircle }, { id: "connect", icon: Plug },
+  { id: "journal", icon: History, group: "" }, { id: "settings", icon: Cog },
 ] as const;
 
 const isMac = navigator.platform.toLowerCase().includes("mac");
@@ -70,7 +79,7 @@ export default function App() {
       if (!(e.metaKey || e.ctrlKey)) return;
       if (e.key.toLowerCase() === "k") { e.preventDefault(); setPalette((p) => !p); return; }
       const n = Number(e.key);
-      if (n >= 1 && n <= NAV.length) { e.preventDefault(); setScreen(NAV[n - 1].id); }
+      if (n >= 1 && n <= 9) { e.preventDefault(); setScreen(NAV[n - 1].id); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -92,13 +101,16 @@ export default function App() {
         <div className="drag" data-tauri-drag-region />
         <div className="brand"><svg viewBox="0 0 32 32" width="22" height="22" aria-hidden><path d="M3 18c3-4 6-4 9 0s6 4 9 0 4-2 8-2v12H3z" fill="currentColor" /></svg><span>Ebb</span></div>
         <nav aria-label="Main">
-          {NAV.map(({ id, icon: Icon }) => (
-            <button key={id} className={screen === id ? "on" : ""} aria-current={screen === id ? "page" : undefined} onClick={() => setScreen(id)}>
+          {NAV.map(({ id, icon: Icon, ...rest }) => (
+            <Fragment key={id}>
+              {"group" in rest && rest.group && <p className="navgroup">{t(rest.group as Key)}</p>}
+                <button className={screen === id ? "on" : ""} aria-current={screen === id ? "page" : undefined} onClick={() => setScreen(id)}>
               {screen === id && <motion.span layoutId="navpill" className="navpill" transition={{ type: "spring", stiffness: 520, damping: 40 }} />}
               <Icon size={17} aria-hidden /> <span className="nav-label">{t(id)}</span>
               {id === "connect" && pending > 0 && <span className="dot" aria-label={`${pending}`}>{pending}</span>}
               {id === "trash" && trashSize > 0 && <span className="dot soft">{human(trashSize, 0)}</span>}
             </button>
+            </Fragment>
           ))}
         </nav>
         {update && (
@@ -120,15 +132,21 @@ export default function App() {
         <AnimatePresence mode="wait">
           {screen !== "explore" && (
             <motion.div key={screen} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
+              <Suspense fallback={null}>
               {screen === "tide" && <Tide go={setScreen} />}
               {screen === "clean" && <Clean />}
               {screen === "optimize" && <Optimize />}
               {screen === "speed" && <Speed go={setScreen} />}
               {screen === "agents" && <Agents go={setScreen} />}
               {screen === "connect" && <Connect />}
+              {screen === "apps" && <Apps />}
+              {screen === "dev" && <Dev />}
+              {screen === "care" && <Care />}
+              {screen === "assistant" && <Assistant />}
               {screen === "journal" && <Journal />}
               {screen === "trash" && <Trash />}
               {screen === "settings" && <Settings />}
+              </Suspense>
             </motion.div>
           )}
         </AnimatePresence>

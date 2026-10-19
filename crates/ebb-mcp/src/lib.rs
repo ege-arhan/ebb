@@ -26,6 +26,9 @@ fn tools() -> Value {
         {"name":"ebb_duplicates","description":"Duplicate files (identical content) under a path, largest reclaimable first. Read-only; optimizing them needs the user.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"min_mb":{"type":"integer","default":1}}}},
         {"name":"ebb_large_old_files","description":"Large files not opened for months, plus old installers in Downloads/Desktop. Read-only.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"min_mb":{"type":"integer","default":200},"days":{"type":"integer","default":180}}}},
         {"name":"ebb_system_health","description":"Health score, memory pressure, heavy apps and startup items with plain-English tips. Read-only.","inputSchema":{"type":"object","properties":{}}},
+        {"name":"ebb_apps","description":"Installed apps by size, with last-used age. Read-only.","inputSchema":{"type":"object","properties":{}}},
+        {"name":"ebb_uninstall_preview","description":"What uninstalling an app would remove (the app plus leftovers). Read-only; a human applies a plan.","inputSchema":{"type":"object","properties":{"name":{"type":"string"}},"required":["name"]}},
+        {"name":"ebb_project_artifacts","description":"Rebuildable artifacts (node_modules, target, venv…) in idle projects. Read-only.","inputSchema":{"type":"object","properties":{"idle_days":{"type":"integer","default":30}}}},
         {"name":"ebb_plan_status","description":"Status of a plan, or the recent plans when plan_id is omitted.","inputSchema":{"type":"object","properties":{"plan_id":{"type":"string"}}}},
     ])
 }
@@ -170,6 +173,35 @@ fn call(name: &str, a: &Value) -> Result<Value, String> {
         }
         "ebb_system_health" => {
             Ok(json!({"health": ebb_core::system::health(), "apps": ebb_core::system::top_apps(8)}))
+        }
+        "ebb_apps" => Ok(json!(
+            ebb_core::apps::installed_apps()
+                .into_iter()
+                .filter(|a| !a.system)
+                .take(60)
+                .collect::<Vec<_>>()
+        )),
+        "ebb_uninstall_preview" => {
+            let nm = a
+                .get("name")
+                .and_then(Value::as_str)
+                .ok_or("name is required")?;
+            let apps = ebb_core::apps::installed_apps();
+            let app = apps
+                .iter()
+                .find(|x| x.name.eq_ignore_ascii_case(nm))
+                .ok_or("app not found")?;
+            serde_json::to_value(ebb_core::apps::preview(&app.id).map_err(e)?)
+                .map_err(|x| x.to_string())
+        }
+        "ebb_project_artifacts" => {
+            let r = ebb_core::projects::find_artifacts(
+                &ebb_core::projects::default_roots(),
+                n("idle_days", 30) as u64,
+                &std::sync::atomic::AtomicBool::new(false),
+            )
+            .map_err(e)?;
+            Ok(json!(r.into_iter().take(40).collect::<Vec<_>>()))
         }
         _ => Err(format!("unknown tool: {name}")),
     }

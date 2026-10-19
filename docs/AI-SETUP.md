@@ -27,7 +27,7 @@ ebb connect --all      # connect every detected assistant (safe: keeps a backup,
 ebb connect --list     # confirm they now show "connected"
 ```
 
-`ebb connect --all` also runs a self-test and prints how many MCP tools answered (11 expected).
+`ebb connect --all` also runs a self-test and prints how many MCP tools answered (14 expected).
 
 If you cannot run commands, give the user this JSON for their MCP client's config (replace the path with the absolute path of `ebb`):
 

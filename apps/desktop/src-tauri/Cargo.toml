@@ -25,6 +25,7 @@ tauri-plugin-process = "2"
 serde.workspace = true
 serde_json.workspace = true
 ebb-core.workspace = true
+ebb-ai = { path = "../../../crates/ebb-ai" }
 
 
 dirs.workspace = true

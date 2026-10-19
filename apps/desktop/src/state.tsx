@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import pkg from "../package.json";
-import { api } from "./ipc";
+import { api, inTauri } from "./ipc";
 import { dict, type Key, type Lang } from "./i18n";
 import type { AiStore, ClientInfo, DiskUsage, Finding, PlanSummary, Report } from "./types";
 
@@ -49,7 +49,7 @@ const read = (k: string) => { try { return localStorage.getItem(k); } catch { re
 const write = (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* özel pencere vb. */ } };
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangS] = useState<Lang>(() => (new URLSearchParams(location.search).get("lang") as Lang) || (read("ebb.lang") as Lang) || (navigator.language.startsWith("tr") ? "tr" : "en"));
+  const [lang, setLangS] = useState<Lang>(() => (new URLSearchParams(location.search).get("lang") as Lang) || (read("ebb.lang") as Lang) || (((["tr", "de", "es", "fr"] as const).find((l) => navigator.language.startsWith(l))) ?? "en"));
   const [theme, setThemeS] = useState<Theme>(() => (read("ebb.theme") as Theme) || "system");
   const [home, setHome] = useState("");
   const [disk, setDisk] = useState<DiskUsage | null>(null);
@@ -88,7 +88,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const setLang = (l: Lang) => { setLangS(l); write("ebb.lang", l); };
   const setTheme = (t: Theme) => { setThemeS(t); write("ebb.theme", t); };
-  const t = useCallback((k: Key) => dict[lang][k] ?? dict.en[k], [lang]);
+  const t = useCallback((k: Key) => (dict[lang][k] ?? dict.en[k]) as string, [lang]);
 
   const toast = useCallback((text: string, action?: Toast["action"]) => {
     const id = nextId.current++;
@@ -111,6 +111,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { api.homeDir().then(setHome); void refresh(); }, [refresh]);
 
+  // Otomatik bakım arka planda bir plan hazırlayınca haber ver.
+  useEffect(() => {
+    if (!inTauri) return;
+    let un: (() => void) | undefined;
+    void import("@tauri-apps/api/event").then(({ listen }) =>
+      listen<{ message: string }>("ebb://care", (e) => toast(`${((dict[lang].careReady ?? dict.en.careReady) as string)}: ${e.payload.message}`)).then((u) => { un = u; }),
+    );
+    return () => un?.();
+  }, [lang, toast]);
+
   // Canlı disk: 20 sn'de bir okunur; değişince havza kendiliğinden hareket eder.
   useEffect(() => {
     const id = setInterval(() => { if (!document.hidden) api.diskUsage().then((d) => { setDisk(d); setDiskAt(Date.now()); }).catch(() => {}); }, 20000);
@@ -119,14 +129,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const undo = useCallback(async (planId: string) => {
     const r = await api.undoPlan(planId);
-    toast(`${dict[lang].restoredToast} · ${r.items.length - r.failed}`);
+    toast(`${((dict[lang].restoredToast ?? dict.en.restoredToast) as string)} · ${r.items.length - r.failed}`);
     await refresh();
   }, [lang, refresh, toast]);
 
   const apply = useCallback(async (planId: string, label: string) => {
     const r = await api.applyPlan(planId);
     const ok = r.items.length - r.failed;
-    toast(`${dict[lang].movedToast} · ${ok}${r.failed ? ` (${r.failed} ✕)` : ""}`, { label: dict[lang].undo, run: () => void undo(planId) });
+    toast(`${((dict[lang].movedToast ?? dict.en.movedToast) as string)} · ${ok}${r.failed ? ` (${r.failed} ✕)` : ""}`, { label: ((dict[lang].undo ?? dict.en.undo) as string), run: () => void undo(planId) });
     void label;
     if (r.bytes > 0) { setCelebrateKind("trash"); setCelebrate(r.bytes); }
     await refresh();

@@ -37,6 +37,23 @@ const en = {
   fromEbb: "Ebb", otherApp: "Put there by you or another app", trashIsEmpty: "The Trash is empty.", inTrash: "in the Trash",
   restoredN: "Restored", freedWord: "freed", freedSub: "Deleted for good. The space is yours again.", needFda: "Open Privacy settings", notRestorable: "Use Finder's Put Back for items Ebb didn't move.",
   trashNudge: "{size} is waiting in the Trash", trashNudgeBody: "Space comes back only after you empty it. Review it first.",
+  apps: "Apps", dev: "Developer", care: "Auto Care", assistant: "Assistant",
+  appsTitle2: "Uninstall apps completely", appsLead: "Move an app and everything it left behind to the Trash in one reviewed step. Sorted by size, with when you last used it.",
+  searchApps: "Search apps", lastUsed: "Last used", never: "never", today: "today", running: "running", uninstall: "Uninstall", leftoversTitle: "What goes with it",
+  includeMedium: "Also include less certain matches", high: "certain", medium: "likely", appItself: "The app", reviewUninstall: "Review uninstall",
+  pickApp: "Pick an app to see what an uninstall would remove.", quitFirst: "Quit this app first.",
+  devTitle: "Developer cleanup", devLead: "Rebuildable folders in projects you haven't touched, and your tools' own cleanup commands.",
+  artifactsTitle: "Project build folders", artifactsBody: "node_modules, target, .venv and similar in projects idle for 30+ days. Projects with uncommitted git changes are skipped.",
+  findArtifacts: "Find build folders", rebuildWith: "Rebuild with", idleDays: "idle {n} days", toolsTitle: "Tool cleanups", toolsBody: "These run the tool's own cleanup command, exactly as shown. Nothing about your projects or data is touched.",
+  runCleanup: "Run", running2: "Running", estimate: "about", cleanupDone: "Cleanup finished",
+  careTitle: "Auto Care", careLead: "Let Ebb prepare cleanups on a schedule. By default it only prepares a plan and tells you; nothing is moved until you approve it.",
+  autoApply: "Apply automatically", autoApplyHint: "Moves to the Trash without asking. Off by default.", runNow: "Run now", lastRun: "Last run", neverRun: "Not run yet",
+  schedDaily: "Every day", schedWeekly: "Every {d}", schedLow: "When under {n}% free", suggestOnly: "Suggest only", careReady: "Auto Care prepared a plan",
+  d0: "Monday", d1: "Tuesday", d2: "Wednesday", d3: "Thursday", d4: "Friday", d5: "Saturday", d6: "Sunday",
+  assistantTitle: "Ask about your disk", assistantLead: "Chat with a model running on your computer (Ollama or LM Studio). It can look at sizes and names and prepare plans. It can't delete or move anything, and no file contents leave your machine.",
+  noModel: "No local model found", noModelBody: "Start Ollama or LM Studio and load a model, then come back.", askPlaceholder: "What is using my disk space?", send: "Send", thinking: "Thinking",
+  usedTools: "Looked at", reviewPlan: "Review the plan", modelLabel: "Model", suggest1: "What is using my disk space?", suggest2: "Which AI tools take the most storage?", suggest3: "Prepare a plan for the safe caches.",
+  navOverview: "Overview", navClean: "Clean", navSystem: "System", navAi: "AI",
   // tide
   tideLead: "Your disk as a tide: the water is what you use, the pale band is what Ebb can safely let go.",
   basinHint: "Water level is used space. The pale band is the safe part that can recede.",
@@ -137,6 +154,23 @@ const tr: Record<Key, string> = {
   fromEbb: "Ebb", otherApp: "Sen ya da başka bir uygulama attı", trashIsEmpty: "Çöp Kutusu boş.", inTrash: "Çöp Kutusu'nda",
   restoredN: "Geri yüklendi", freedWord: "boşaltıldı", freedSub: "Kalıcı olarak silindi. Yer artık senin.", needFda: "Gizlilik ayarlarını aç", notRestorable: "Ebb'in taşımadığı öğeler için Finder'daki Geri Koy'u kullan.",
   trashNudge: "Çöp Kutusu'nda {size} bekliyor", trashNudgeBody: "Yer, ancak boşalttığında geri gelir. Önce bir göz at.",
+  apps: "Uygulamalar", dev: "Geliştirici", care: "Otomatik bakım", assistant: "Asistan",
+  appsTitle2: "Uygulamaları tamamen kaldır", appsLead: "Bir uygulamayı ve arkasında bıraktığı her şeyi tek incelenen adımda Çöp Kutusu'na taşı. Boyuta göre sıralı, en son ne zaman kullandığınla.",
+  searchApps: "Uygulama ara", lastUsed: "Son kullanım", never: "hiç", today: "bugün", running: "açık", uninstall: "Kaldır", leftoversTitle: "Onunla birlikte giden",
+  includeMedium: "Daha az kesin eşleşmeleri de dahil et", high: "kesin", medium: "olası", appItself: "Uygulama", reviewUninstall: "Kaldırmayı incele",
+  pickApp: "Kaldırmanın neyi sileceğini görmek için bir uygulama seç.", quitFirst: "Önce bu uygulamayı kapat.",
+  devTitle: "Geliştirici temizliği", devLead: "Dokunmadığın projelerdeki yeniden oluşturulabilir klasörler ve araçlarının kendi temizlik komutları.",
+  artifactsTitle: "Proje derleme klasörleri", artifactsBody: "30+ gündür boşta duran projelerdeki node_modules, target, .venv gibi klasörler. Kaydedilmemiş git değişikliği olan projeler atlanır.",
+  findArtifacts: "Derleme klasörlerini bul", rebuildWith: "Yeniden oluştur", idleDays: "{n} gündür boşta", toolsTitle: "Araç temizlikleri", toolsBody: "Bunlar aracın kendi temizlik komutunu, gösterildiği gibi çalıştırır. Projelerine ya da verine dokunulmaz.",
+  runCleanup: "Çalıştır", running2: "Çalışıyor", estimate: "yaklaşık", cleanupDone: "Temizlik bitti",
+  careTitle: "Otomatik bakım", careLead: "Ebb'in zamanlanmış temizlikler hazırlamasına izin ver. Varsayılan olarak yalnızca plan hazırlar ve haber verir; sen onaylamadan hiçbir şey taşınmaz.",
+  autoApply: "Otomatik uygula", autoApplyHint: "Sormadan Çöp Kutusu'na taşır. Varsayılan olarak kapalı.", runNow: "Şimdi çalıştır", lastRun: "Son çalışma", neverRun: "Henüz çalışmadı",
+  schedDaily: "Her gün", schedWeekly: "Her {d}", schedLow: "Boş alan %{n} altına inince", suggestOnly: "Yalnızca öner", careReady: "Otomatik bakım bir plan hazırladı",
+  d0: "Pazartesi", d1: "Salı", d2: "Çarşamba", d3: "Perşembe", d4: "Cuma", d5: "Cumartesi", d6: "Pazar",
+  assistantTitle: "Diskin hakkında sor", assistantLead: "Bilgisayarında çalışan bir modelle (Ollama ya da LM Studio) konuş. Boyutlara ve adlara bakıp plan hazırlayabilir. Hiçbir şeyi silemez ya da taşıyamaz; dosya içerikleri makinenden çıkmaz.",
+  noModel: "Yerel model bulunamadı", noModelBody: "Ollama ya da LM Studio'yu başlat, bir model yükle ve geri dön.", askPlaceholder: "Disk alanımı ne kullanıyor?", send: "Gönder", thinking: "Düşünüyor",
+  usedTools: "Bakılanlar", reviewPlan: "Planı incele", modelLabel: "Model", suggest1: "Disk alanımı ne kullanıyor?", suggest2: "Hangi AI araçları en çok yer kaplıyor?", suggest3: "Güvenli önbellekler için plan hazırla.",
+  navOverview: "Genel", navClean: "Temizlik", navSystem: "Sistem", navAi: "AI",
   tide: "Gelgit", explore: "Keşfet", clean: "Temizle", agents: "AI depolama", connect: "AI'a bağla", journal: "Günlük", settings: "Ayarlar",
   free: "boş", of: "/", used: "dolu", canEbb: "çekilebilir", open: "Aç", back: "Geri", cancel: "Vazgeç", copy: "Kopyala", copied: "Kopyalandı",
   files: "dosya", loading: "Etrafa bakılıyor", reveal: "Klasörde göster", size: "Boyut", path: "Yol", search: "Ara", all: "Tümü",
@@ -197,5 +231,33 @@ const tr: Record<Key, string> = {
   w3: "AI'ın yardım eder, silmez", w3b: "Asistanlar MCP ile tarayıp plan çıkarabilir. Uygulamayı yalnızca sen yaparsın.",
   letsGo: "Bir taramayla başla", later: "Önce AI'ı bağla", skip: "Şimdi değil",
 };
-export const dict = { en, tr };
-export type Lang = "en" | "tr";
+const de: Partial<Record<Key, string>> = {
+  tide: "Gezeiten", explore: "Erkunden", clean: "Aufräumen", optimize: "Optimieren", speed: "Beschleunigen", apps: "Apps", dev: "Entwickler", trash: "Papierkorb", care: "Auto-Pflege", assistant: "Assistent",
+  agents: "KI-Speicher", connect: "KI verbinden", journal: "Protokoll", settings: "Einstellungen", navOverview: "Übersicht", navClean: "Aufräumen", navSystem: "System", navAi: "KI",
+  free: "frei", used: "belegt", of: "von", cancel: "Abbrechen", undo: "Rückgängig", restore: "Wiederherstellen", open: "Öffnen", back: "Zurück", search: "Suchen", all: "Alle",
+  reviewClean: "Aufräumen prüfen", reclaimable: "Sicher entfernbar", needsLook: "Einen Blick wert", moveToTrash: "In den Papierkorb", planTitle: "Prüfen, bevor etwas verschoben wird",
+  trashEmptyBtn: "Papierkorb leeren", deleteForever: "Endgültig löschen", findDupes: "Duplikate finden", optimizeAll: "Alles optimieren", uninstall: "Deinstallieren", runCleanup: "Ausführen", runNow: "Jetzt ausführen",
+  scan: "Scannen", stop: "Scan stoppen", chooseFolder: "Anderen Ordner wählen…", whereTitle: "Wo möchtest du nachsehen?", send: "Senden", language: "Sprache", theme: "Design", appearance: "Darstellung",
+  welcome: "Willkommen bei Ebb", letsGo: "Mit einem Scan starten", skip: "Nicht jetzt", copy: "Kopieren", copied: "Kopiert", connected: "Verbunden", disconnect: "Trennen", connectOne: "Verbinden",
+};
+const es: Partial<Record<Key, string>> = {
+  tide: "Marea", explore: "Explorar", clean: "Limpiar", optimize: "Optimizar", speed: "Acelerar", apps: "Apps", dev: "Desarrollo", trash: "Papelera", care: "Cuidado auto", assistant: "Asistente",
+  agents: "Almacenamiento IA", connect: "Conectar IA", journal: "Registro", settings: "Ajustes", navOverview: "Resumen", navClean: "Limpieza", navSystem: "Sistema", navAi: "IA",
+  free: "libres", used: "usados", of: "de", cancel: "Cancelar", undo: "Deshacer", restore: "Restaurar", open: "Abrir", back: "Atrás", search: "Buscar", all: "Todo",
+  reviewClean: "Revisar limpieza", reclaimable: "Seguro de limpiar", needsLook: "Vale la pena mirar", moveToTrash: "Mover a la papelera", planTitle: "Revisa antes de mover nada",
+  trashEmptyBtn: "Vaciar papelera", deleteForever: "Eliminar para siempre", findDupes: "Buscar duplicados", optimizeAll: "Optimizar todo", uninstall: "Desinstalar", runCleanup: "Ejecutar", runNow: "Ejecutar ahora",
+  scan: "Escanear", stop: "Detener escaneo", chooseFolder: "Elegir otra carpeta…", whereTitle: "¿Dónde quieres mirar?", send: "Enviar", language: "Idioma", theme: "Tema", appearance: "Apariencia",
+  welcome: "Bienvenido a Ebb", letsGo: "Empezar con un escaneo", skip: "Ahora no", copy: "Copiar", copied: "Copiado", connected: "Conectado", disconnect: "Desconectar", connectOne: "Conectar",
+};
+const fr: Partial<Record<Key, string>> = {
+  tide: "Marée", explore: "Explorer", clean: "Nettoyer", optimize: "Optimiser", speed: "Accélérer", apps: "Apps", dev: "Développeur", trash: "Corbeille", care: "Soin auto", assistant: "Assistant",
+  agents: "Stockage IA", connect: "Connecter l'IA", journal: "Journal", settings: "Réglages", navOverview: "Aperçu", navClean: "Nettoyage", navSystem: "Système", navAi: "IA",
+  free: "libres", used: "utilisés", of: "sur", cancel: "Annuler", undo: "Annuler l'action", restore: "Restaurer", open: "Ouvrir", back: "Retour", search: "Rechercher", all: "Tout",
+  reviewClean: "Vérifier le nettoyage", reclaimable: "Sans risque à nettoyer", needsLook: "À examiner", moveToTrash: "Mettre à la corbeille", planTitle: "Vérifiez avant tout déplacement",
+  trashEmptyBtn: "Vider la corbeille", deleteForever: "Supprimer définitivement", findDupes: "Trouver les doublons", optimizeAll: "Tout optimiser", uninstall: "Désinstaller", runCleanup: "Lancer", runNow: "Lancer maintenant",
+  scan: "Analyser", stop: "Arrêter l'analyse", chooseFolder: "Choisir un autre dossier…", whereTitle: "Où voulez-vous regarder ?", send: "Envoyer", language: "Langue", theme: "Thème", appearance: "Apparence",
+  welcome: "Bienvenue dans Ebb", letsGo: "Commencer par une analyse", skip: "Pas maintenant", copy: "Copier", copied: "Copié", connected: "Connecté", disconnect: "Déconnecter", connectOne: "Connecter",
+};
+export const dict: Record<Lang, Partial<Record<Key, string>>> = { en, tr, de, es, fr };
+export type Lang = "en" | "tr" | "de" | "es" | "fr";
+export const LANGS: { id: Lang; label: string }[] = [{ id: "en", label: "English" }, { id: "tr", label: "Türkçe" }, { id: "de", label: "Deutsch" }, { id: "es", label: "Español" }, { id: "fr", label: "Français" }];

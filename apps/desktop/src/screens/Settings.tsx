@@ -1,5 +1,6 @@
 import pkg from "../../package.json";
 import { PageHead } from "../components/Bits";
+import { LANGS } from "../i18n";
 import { useApp } from "../state";
 
 const isMac = navigator.platform.toLowerCase().includes("mac");
@@ -16,8 +17,8 @@ export function Settings() {
           <div className="seg" role="group">{(["system", "light", "dark"] as const).map((v) => (
             <button key={v} aria-pressed={theme === v} onClick={() => setTheme(v)}>{t(v)}</button>))}</div></div>
         <div className="field"><span>{t("language")}</span>
-          <div className="seg" role="group">{(["en", "tr"] as const).map((v) => (
-            <button key={v} aria-pressed={lang === v} onClick={() => setLang(v)}>{v === "en" ? "English" : "Türkçe"}</button>))}</div></div>
+          <div className="seg wrap" role="group">{LANGS.map((v) => (
+            <button key={v.id} aria-pressed={lang === v.id} onClick={() => setLang(v.id)}>{v.label}</button>))}</div></div>
       </section>
       <section className="panel">
         <div className="field">

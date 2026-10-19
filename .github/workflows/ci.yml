@@ -27,6 +27,9 @@ jobs:
         with: { node-version: 22, cache: pnpm, cache-dependency-path: apps/desktop/pnpm-lock.yaml }
       - run: pnpm -C apps/desktop install --frozen-lockfile
       - run: pnpm -C apps/desktop build
+      - name: UI smoke test (every screen, mock data)
+        if: runner.os == 'Linux'
+        run: pnpm -C apps/desktop exec node e2e/smoke.mjs
       - name: Prepare the ebb sidecar (Tauri checks it exists)
         run: node apps/desktop/scripts/sidecar.mjs debug
       - run: cargo fmt --all --check

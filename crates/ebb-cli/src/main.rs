@@ -212,6 +212,48 @@ enum Cmd {
         #[arg(long)]
         json: bool,
     },
+    /// Installed apps; preview what an uninstall would remove (app + leftovers). Moves to the Trash with --yes.
+    #[command(name = "uninstall")]
+    AppsUninstall {
+        /// App name or id to uninstall
+        name: Option<String>,
+        #[arg(long)]
+        yes: bool,
+        #[arg(long)]
+        json: bool,
+    },
+    /// Rebuildable project artifacts (node_modules, target, .venv…) in idle projects.
+    Projects {
+        #[arg(long, default_value_t = 30)]
+        idle_days: u64,
+        #[arg(long)]
+        json: bool,
+    },
+    /// Run a tool's own cleanup (docker, brew, npm, pnpm, pip…). Without an id, lists what is available.
+    Prune {
+        id: Option<String>,
+        #[arg(long)]
+        yes: bool,
+        #[arg(long)]
+        json: bool,
+    },
+    /// Auto Care rules: list, run now, enable/disable.
+    Care {
+        #[arg(long)]
+        run: Option<String>,
+        #[arg(long)]
+        enable: Option<String>,
+        #[arg(long)]
+        disable: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+    /// Ask a local model (Ollama / LM Studio) about your disk. It can look and plan, never apply.
+    Ask {
+        question: Vec<String>,
+        #[arg(long)]
+        model: Option<String>,
+    },
     /// Explain a path: size, catalog match, protection.
     Explain {
         path: PathBuf,
@@ -1439,6 +1481,233 @@ fn run() -> ebb_core::Result<()> {
                     ui::cmd("ebb trash --empty")
                 );
             });
+        }
+        Cmd::AppsUninstall { name, yes, json } => {
+            let apps = ebb_core::apps::installed_apps();
+            let Some(name) = name else {
+                emit(json, &apps, || {
+                    heading("Installed apps");
+                    for a in apps.iter().filter(|a| !a.system).take(40) {
+                        println!(
+                            "   {:>9}  {:<30} {}",
+                            style(human(a.size)).bold(),
+                            a.name,
+                            dim(a
+                                .last_used_days
+                                .map(|d| format!("used {d}d ago"))
+                                .unwrap_or_default())
+                        );
+                    }
+                    println!(
+                        "\n  {}  preview an uninstall\n",
+                        ui::cmd("ebb uninstall <name>")
+                    );
+                });
+                return Ok(());
+            };
+            let app = apps
+                .iter()
+                .find(|a| a.name.eq_ignore_ascii_case(&name) || a.id == name)
+                .ok_or_else(|| ebb_core::Error::NotFound(format!("app {name}")))?;
+            let pv = ebb_core::apps::preview(&app.id)?;
+            let paths = ebb_core::apps::uninstall_paths(&pv, false);
+            let plan = Plan::from_paths(&paths);
+            let j = Journal::open_default()?;
+            j.save_plan(&plan)?;
+            emit(json && !yes, &plan, || {
+                heading(&format!(
+                    "Uninstall {}  {}",
+                    pv.app.name,
+                    style(human(plan.total)).bold()
+                ));
+                plan.items.iter().for_each(|i| {
+                    println!(
+                        "   {:>9}  {}",
+                        style(human(i.size)).bold(),
+                        dim(tilde(&i.path))
+                    )
+                });
+                pv.warnings
+                    .iter()
+                    .for_each(|w| println!("   {} {}", style("!").yellow(), w));
+            });
+            if yes
+                || (ui::tty()
+                    && !json
+                    && Confirm::with_theme(&ColorfulTheme::default())
+                        .with_prompt(format!(
+                            "Move {} and its leftovers to the Trash?",
+                            pv.app.name
+                        ))
+                        .default(false)
+                        .interact()
+                        .unwrap_or(false))
+            {
+                let r = j.apply(&plan.id)?;
+                print_report("Moved to the Trash", &r);
+            } else {
+                println!(
+                    "  Nothing changed. Apply later: {}",
+                    ui::cmd(&format!("ebb apply {} --yes", plan.id))
+                );
+            }
+        }
+        Cmd::Projects { idle_days, json } => {
+            let pb = spinner("Looking for build artifacts");
+            let a = ebb_core::projects::find_artifacts(
+                &ebb_core::projects::default_roots(),
+                idle_days,
+                &AtomicBool::new(false),
+            )?;
+            pb.finish_and_clear();
+            emit(json, &a, || {
+                let total: u64 = a.iter().map(|x| x.size).sum();
+                heading(&format!(
+                    "Project artifacts  {}",
+                    style(human(total)).bold()
+                ));
+                for x in a.iter().take(30) {
+                    println!(
+                        "   {:>9}  {:<13} {:>4}d idle  {}",
+                        style(human(x.size)).bold(),
+                        x.kind,
+                        x.project_idle_days,
+                        dim(tilde(&x.path))
+                    );
+                }
+                println!(
+                    "\n  Move some with {}\n",
+                    ui::cmd("ebb clean --paths <path> …")
+                );
+            });
+        }
+        Cmd::Prune { id, yes, json } => match id {
+            None => {
+                let acts = ebb_core::prune::available();
+                emit(json, &acts, || {
+                    heading("Tool cleanups");
+                    for a in &acts {
+                        println!(
+                            "   {:>9}  {:<18} {}",
+                            style(a.estimate.map(human).unwrap_or_else(|| "?".into())).bold(),
+                            a.id,
+                            dim(&a.command)
+                        );
+                    }
+                    println!("\n  Run one: {}\n", ui::cmd("ebb prune <id>"));
+                });
+            }
+            Some(id) => {
+                let go = yes
+                    || (ui::tty()
+                        && Confirm::with_theme(&ColorfulTheme::default())
+                            .with_prompt(format!("Run the {id} cleanup?"))
+                            .default(true)
+                            .interact()
+                            .unwrap_or(false));
+                if go {
+                    let r = ebb_core::prune::run(&id)?;
+                    emit(json, &r, || {
+                        println!(
+                            "  {} {} · {} freed\n",
+                            if r.ok {
+                                style("✓").green()
+                            } else {
+                                style("✗").red()
+                            },
+                            id,
+                            human(r.after.saturating_sub(r.before))
+                        )
+                    });
+                }
+            }
+        },
+        Cmd::Care {
+            run,
+            enable,
+            disable,
+            json,
+        } => {
+            let j = Journal::open_default()?;
+            let mut rules = j.rules()?;
+            if rules.is_empty() {
+                for r in ebb_core::autocare::default_rules() {
+                    j.save_rule(&r)?;
+                }
+                rules = j.rules()?;
+            }
+            if let Some(id) = run {
+                let r = rules
+                    .iter()
+                    .find(|r| r.id == id)
+                    .ok_or_else(|| ebb_core::Error::NotFound(format!("rule {id}")))?;
+                let o = ebb_core::autocare::run_rule(&j, r)?;
+                emit(json, &o, || {
+                    println!("  {} {}\n", style("✓").green(), o.message)
+                });
+            } else if let Some(id) = enable.or(disable.clone()) {
+                let mut r = rules
+                    .iter()
+                    .find(|r| r.id == id)
+                    .cloned()
+                    .ok_or_else(|| ebb_core::Error::NotFound(format!("rule {id}")))?;
+                r.enabled = disable.is_none();
+                j.save_rule(&r)?;
+                ui::ok(format!(
+                    "{} {}",
+                    id,
+                    if r.enabled { "enabled" } else { "disabled" }
+                ));
+            } else {
+                emit(json, &rules, || {
+                    heading("Auto Care");
+                    for r in &rules {
+                        println!(
+                            "   {}  {:<28} {}",
+                            if r.enabled {
+                                style("on ").green()
+                            } else {
+                                style("off").dim()
+                            },
+                            r.name,
+                            dim(&r.id)
+                        );
+                    }
+                    println!(
+                        "\n  {}  run one now     {}  turn on\n",
+                        ui::cmd("ebb care --run <id>"),
+                        ui::cmd("ebb care --enable <id>")
+                    );
+                });
+            }
+        }
+        Cmd::Ask { question, model } => {
+            let providers = ebb_ai::detect();
+            let p = providers
+                .iter()
+                .find(|p| p.online && !p.models.is_empty())
+                .ok_or_else(|| {
+                    ebb_core::Error::NotFound(
+                        "no local model found. Start Ollama or LM Studio".into(),
+                    )
+                })?;
+            let m = model
+                .or_else(|| p.models.first().cloned())
+                .unwrap_or_default();
+            let pb = spinner(&format!("Asking {m} via {}", p.name));
+            let r = ebb_ai::chat(p, &m, &[], &question.join(" "))?;
+            pb.finish_and_clear();
+            println!("\n{}\n", r.text);
+            for c in &r.tool_calls {
+                println!("  {} {}", dim("used"), dim(&c.name));
+            }
+            if let Some(id) = r.plan_id {
+                println!(
+                    "\n  Plan {} prepared. Review: {}\n",
+                    id,
+                    ui::cmd(&format!("ebb apply {id}"))
+                );
+            }
         }
         Cmd::Completions { shell } => {
             clap_complete::generate(shell, &mut Cli::command(), "ebb", &mut std::io::stdout())

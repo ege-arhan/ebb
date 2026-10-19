@@ -494,7 +494,7 @@ fn fixture() {
                 "ebb with spaces ' $;"
             });
             fs::copy(ebb(), &bin).unwrap();
-            assert_eq!(connect::selftest(&bin).unwrap(), 11);
+            assert_eq!(connect::selftest(&bin).unwrap(), 14);
         }
         #[cfg(unix)]
         "selftest_timeout" | "selftest_descendant" => {

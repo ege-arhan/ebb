@@ -1,5 +1,5 @@
 // Tarayıcıda (Tauri dışı) geliştirme ve ekran görüntüsü doğrulaması için sahte IPC.
-import type { TrashEntry } from "./types";
+import type { Artifact, InstalledApp, PruneAction, Rule, TrashEntry } from "./types";
 import type { Api, AiStore, AppUsage, ClientInfo, DupGroup, Finding, Node, Plan, PlanSummary, Report, StartupItem } from "./types";
 
 const HOME = "/Users/demo";
@@ -71,6 +71,33 @@ let used = 782 * GB;
 const total = 994 * GB;
 const journal: PlanSummary[] = [{ id: "a41c9e07d2b3", created: Date.now() / 1000 - 86400 * 2, total: 3.1 * GB, status: "applied" }];
 const plans = new Map<string, Plan>();
+const appList: InstalledApp[] = [
+  { id: "/Applications/Xcode.app", name: "Xcode", path: "/Applications/Xcode.app", bundle_id: "com.apple.dt.Xcode", version: "27.0", size: 38 * GB, running: false, last_used_days: 4, system: false },
+  { id: "/Applications/Docker.app", name: "Docker", path: "/Applications/Docker.app", bundle_id: "com.docker.docker", version: "4.40", size: 2.4 * GB, running: true, last_used_days: 0, system: false },
+  { id: "/Applications/Adobe Premiere.app", name: "Adobe Premiere Pro", path: "/Applications/Adobe Premiere.app", bundle_id: "com.adobe.premiere", version: "26.1", size: 4.1 * GB, running: false, last_used_days: 212, system: false },
+  { id: "/Applications/Unity Hub.app", name: "Unity Hub", path: "/Applications/Unity Hub.app", bundle_id: "com.unity3d.unityhub", version: "3.9", size: 1.1 * GB, running: false, last_used_days: 140, system: false },
+  { id: "/Applications/Slack.app", name: "Slack", path: "/Applications/Slack.app", bundle_id: "com.tinyspeck.slackmacgap", version: "5.2", size: 480 * MB, running: true, last_used_days: 0, system: false },
+  { id: "/Applications/Zoom.app", name: "zoom.us", path: "/Applications/zoom.us.app", bundle_id: "us.zoom.xos", version: "6.4", size: 310 * MB, running: false, last_used_days: 66, system: false },
+];
+let artifacts: Artifact[] = [
+  { path: `${HOME}/Developer/ebb/target`, project: `${HOME}/Developer/ebb`, kind: "cargo_target", size: 5.2 * GB, files: 41000, project_idle_days: 3, safety: "safe", rebuild: "cargo build" },
+  { path: `${HOME}/Developer/web/node_modules`, project: `${HOME}/Developer/web`, kind: "node_modules", size: 2.4 * GB, files: 88000, project_idle_days: 58, safety: "safe", rebuild: "npm install" },
+  { path: `${HOME}/Developer/old-api/.venv`, project: `${HOME}/Developer/old-api`, kind: "python_venv", size: 1.3 * GB, files: 21000, project_idle_days: 190, safety: "review", rebuild: "python -m venv .venv" },
+  { path: `${HOME}/Developer/ios-app/Pods`, project: `${HOME}/Developer/ios-app`, kind: "pods", size: 640 * MB, files: 9000, project_idle_days: 95, safety: "safe", rebuild: "pod install" },
+];
+const prunes: PruneAction[] = [
+  { id: "docker-build", label: "Docker build cache", description: "Unused build cache and dangling images.", command: "docker builder prune -f && docker image prune -f", estimate: 6.4 * GB, installed: true, safety: "safe" },
+  { id: "homebrew", label: "Homebrew downloads", description: "Old versions and cached downloads.", command: "brew cleanup -s --prune=all", estimate: 1.1 * GB, installed: true, safety: "safe" },
+  { id: "xcode-simulators", label: "Unavailable simulators", description: "Simulators for Xcode versions you removed.", command: "xcrun simctl delete unavailable", estimate: null, installed: true, safety: "safe" },
+  { id: "pnpm", label: "pnpm store", description: "Packages no project uses any more.", command: "pnpm store prune", estimate: 380 * MB, installed: true, safety: "safe" },
+];
+let rules: Rule[] = [
+  { id: "weekly-caches", name: "Clean safe caches every week", kind: { type: "safe_caches" }, schedule: { type: "weekly", weekday: 6 }, enabled: true, auto_apply: false, last_run: Date.now() / 1000 - 86400 * 3, last_result: "5.4 GB ready for review" },
+  { id: "old-installers", name: "Old installers (30 days)", kind: { type: "old_installers", min_age_days: 30 }, schedule: { type: "weekly", weekday: 0 }, enabled: false, auto_apply: false, last_run: null, last_result: null },
+  { id: "trash-30", name: "Empty items older than 30 days from the Trash", kind: { type: "trash_older_than", days: 30 }, schedule: { type: "daily" }, enabled: false, auto_apply: false, last_run: null, last_result: null },
+  { id: "low-disk", name: "When disk is under 10% free: safe caches", kind: { type: "safe_caches" }, schedule: { type: "on_low_disk", free_percent: 10 }, enabled: true, auto_apply: false, last_run: null, last_result: null },
+  { id: "big-old", name: "Large forgotten files (suggest only)", kind: { type: "large_old", min_mb: 200, min_age_days: 180 }, schedule: { type: "weekly", weekday: 0 }, enabled: false, auto_apply: false, last_run: null, last_result: null },
+];
 let trash: TrashEntry[] = [
   { id: "t1", name: "caches", size: 2.3 * GB, deleted_at: Date.now() / 1000 - 3600, original: `${HOME}/.gradle/caches`, by_ebb: true, plan_id: "a41c9e07d2b3", restorable: true },
   { id: "t2", name: "Cache", size: 1.9 * GB, deleted_at: Date.now() / 1000 - 3600, original: `${HOME}/Library/Caches/Google/Chrome/Default/Cache`, by_ebb: true, plan_id: "a41c9e07d2b3", restorable: true },
@@ -191,6 +218,38 @@ export const mockApi: Api = {
   async trashPurge(ids) { await wait(400); const b = trash.filter((x) => ids.includes(x.id)).reduce((a, x) => a + x.size, 0); trash = trash.filter((x) => !ids.includes(x.id)); used -= b; return b; },
   async trashEmpty() { await wait(700); const b = trash.reduce((a, x) => a + x.size, 0); trash = []; used -= b; return b; },
   openPrivacySettings: async () => {},
+  async planGet(id) { return plans.get(id) ?? { id, created: Date.now() / 1000, items: [], total: 0, skipped: [] }; },
+  appsList: async () => { await wait(300); return appList.map((a) => ({ ...a })); },
+  async appPreview(id) {
+    await wait(300);
+    const app = appList.find((a) => a.id === id)!;
+    const leftovers = [
+      { path: `${HOME}/Library/Application Support/${app.name}`, size: 420 * MB, kind: "support", confidence: "high" as const },
+      { path: `${HOME}/Library/Caches/${app.bundle_id}`, size: 310 * MB, kind: "cache", confidence: "high" as const },
+      { path: `${HOME}/Library/Preferences/${app.bundle_id}.plist`, size: 24_000, kind: "preferences", confidence: "high" as const },
+      { path: `${HOME}/Library/Logs/${app.name}`, size: 12 * MB, kind: "logs", confidence: "medium" as const },
+    ];
+    return { app, leftovers, total: app.size + leftovers.reduce((a, l) => a + l.size, 0), warnings: app.running ? [`${app.name} is running. Quit it first.`] : [] };
+  },
+  async appUninstallPlan(id) {
+    await wait(300);
+    const pv = await mockApi.appPreview(id);
+    const items = [{ path: pv.app.path, size: pv.app.size, entry_id: null, reason: pv.app.name }, ...pv.leftovers.filter((l) => l.confidence === "high").map((l) => ({ path: l.path, size: l.size, entry_id: null, reason: l.kind }))];
+    const plan = { id: Math.random().toString(16).slice(2, 14), created: Date.now() / 1000, items, total: items.reduce((a, b) => a + b.size, 0), skipped: [] as [string, string][] };
+    plans.set(plan.id, plan);
+    return plan;
+  },
+  projectArtifacts: async () => { await wait(900); return artifacts.map((a) => ({ ...a })); },
+  pruneList: async () => { await wait(300); return prunes.map((p) => ({ ...p })); },
+  async pruneRun(id) { await wait(1200); const p = prunes.find((x) => x.id === id); used -= p?.estimate ?? 0; return { id, ok: true, output: "done", before: total - used, after: total - used + (p?.estimate ?? 0) }; },
+  careRules: async () => rules.map((r) => ({ ...r })),
+  async careSave(r) { rules = rules.map((x) => (x.id === r.id ? r : x)); },
+  async careRun(id) { await wait(900); const r = rules.find((x) => x.id === id)!; r.last_run = Date.now() / 1000; r.last_result = "5.4 GB ready for review"; return { rule_id: id, plan_id: "demo", reclaimable: 5.4 * GB, applied: false, moved: 0, message: "Plan ready: 5.4 GB. Review it in the Journal." }; },
+  aiProviders: async () => [{ id: "ollama", name: "Ollama", base_url: "http://127.0.0.1:11434", models: ["llama3.2:3b", "qwen2.5:7b"], online: true }],
+  async aiChat(_p, _m, _h, message) {
+    await wait(1400);
+    return { text: `Looking at your disk: about ${(782).toFixed(0)} GB is used. The biggest safe wins are Gradle caches (2.3 GB) and Chrome's cache (1.9 GB). I prepared a plan for the safe caches (5.4 GB). Nothing was deleted: review it, then apply it yourself.\n\nYou asked: "${message}"`, tool_calls: [{ name: "disk_usage", args: {}, result_preview: "{\"free\":212e9}" }, { name: "findings", args: {}, result_preview: "[…]" }, { name: "plan_cleanup", args: {}, result_preview: "plan ready" }], plan_id: "demo" };
+  },
   async findDuplicates(_root, onProgress) {
     for (let i = 1; i <= 8; i++) { await wait(150); onProgress({ stage: i < 5 ? "listing" : "hashing", files: i * 52_000, bytes: i * 9 * GB }); }
     return { groups: dupes.map((g) => ({ ...g })), cloneSupported: true };

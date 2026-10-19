@@ -44,6 +44,11 @@
 - **Honest speed-up.** A health score with plain tips, memory pressure, the heaviest apps (quit them like Cmd+Q), and the items that start with your computer (turn them off and on). No fake RAM boosters.
 - **A Trash you can see.** Everything Ebb cleans waits in the Trash first. Ebb shows what's there, restores its own items to where they came from, deletes selected items for good, or empties it, all from one screen.
 - **Watch the trend.** A small chart shows how your free space changed over the last week or month.
+- **Uninstall apps completely.** An app plus everything it left behind (support files, caches, preferences, containers) in one reviewed plan.
+- **Developer cleanup.** Old `node_modules`, `target`, `.venv`, `Pods` in projects you haven't touched, plus the tools' own cleanups (Docker, Homebrew, Xcode simulators, npm, pnpm, pip…).
+- **Auto Care.** Schedule cleanups. By default Ebb only prepares a plan and tells you; automatic apply is opt-in per rule.
+- **Ask your disk.** Chat with a local model (Ollama or LM Studio). It can look and plan, never delete (`ebb ask`).
+- **Auto-updates** from signed releases, and the UI speaks English, Türkçe, Deutsch, Español and Français.
 - **Lives in your menu bar / tray.** Free space at a glance, quick actions, and closing the window keeps Ebb running.
 - **Free, with no limits and no telemetry.** Apache-2.0. The only network call is an optional once-a-day check for a newer release on GitHub (turn it off in Settings).
 
@@ -76,6 +81,11 @@ ebb system             # health score, memory, heavy apps, tips
 ebb apps --quit Slack  # quit an app gracefully
 ebb startup            # items that start with your computer
 ebb trash              # what's in the Trash (--restore <id>, --empty)
+ebb uninstall Slack    # app + leftovers, reviewed
+ebb projects           # rebuildable project folders
+ebb prune              # Docker, Homebrew, pnpm… own cleanups
+ebb care               # Auto Care rules
+ebb ask "what grew?"   # local model, read + plan only
 ebb connect            # connect your AI assistants
 ebb undo <plan-id>     # restore a cleanup
 ebb completions zsh    # shell completions
@@ -108,7 +118,7 @@ ebb connect --remove cursor
 
 `ebb connect` edits each client's own config atomically, keeps the first backup (`*.ebb-backup`), refuses symlinked or non-JSON configs, never overwrites a server called `ebb` it did not create, and finishes with a real self-test of the MCP server. The desktop app has the same flow on the **Connect AI** screen.
 
-MCP tools: `ebb_scan`, `ebb_top`, `ebb_why`, `ebb_explain_path`, `ebb_findings`, `ebb_agents_storage`, `ebb_duplicates`, `ebb_large_old_files`, `ebb_system_health`, `ebb_plan_cleanup`, `ebb_plan_status`. There is deliberately **no apply and no undo tool**: anything that moves files needs a human (`ebb apply --yes`, `ebb undo`, or the app).
+MCP tools: `ebb_scan`, `ebb_top`, `ebb_why`, `ebb_explain_path`, `ebb_findings`, `ebb_agents_storage`, `ebb_duplicates`, `ebb_large_old_files`, `ebb_system_health`, `ebb_apps`, `ebb_uninstall_preview`, `ebb_project_artifacts`, `ebb_plan_cleanup`, `ebb_plan_status`. There is deliberately **no apply and no undo tool**: anything that moves files needs a human (`ebb apply --yes`, `ebb undo`, or the app).
 
 ## Build from source
 

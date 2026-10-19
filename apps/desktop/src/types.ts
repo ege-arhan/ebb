@@ -50,6 +50,21 @@ export interface DiskSample { ts: number; total: number; free: number }
 
 export interface TrashEntry { id: string; name: string; size: number; deleted_at: number | null; original: string | null; by_ebb: boolean; plan_id: string | null; restorable: boolean }
 
+export interface InstalledApp { id: string; name: string; path: string; bundle_id: string | null; version: string | null; size: number; running: boolean; last_used_days: number | null; system: boolean }
+export interface Leftover { path: string; size: number; kind: string; confidence: "high" | "medium" }
+export interface UninstallPreview { app: InstalledApp; leftovers: Leftover[]; total: number; warnings: string[] }
+export interface Artifact { path: string; project: string; kind: string; size: number; files: number; project_idle_days: number; safety: "safe" | "review"; rebuild: string }
+export interface PruneAction { id: string; label: string; description: string; command: string; estimate: number | null; installed: boolean; safety: "safe" | "review" }
+export interface PruneResult { id: string; ok: boolean; output: string; before: number; after: number }
+export type RuleKind = { type: "safe_caches" } | { type: "old_installers"; min_age_days: number } | { type: "trash_older_than"; days: number } | { type: "large_old"; min_mb: number; min_age_days: number };
+export type Schedule = { type: "daily" } | { type: "weekly"; weekday: number } | { type: "on_low_disk"; free_percent: number };
+export interface Rule { id: string; name: string; kind: RuleKind; schedule: Schedule; enabled: boolean; auto_apply: boolean; last_run: number | null; last_result: string | null }
+export interface RuleOutcome { rule_id: string; plan_id: string | null; reclaimable: number; applied: boolean; moved: number; message: string }
+export interface Provider { id: string; name: string; base_url: string; models: string[]; online: boolean }
+export interface ChatMessage { role: "user" | "assistant" | "tool"; content: string }
+export interface AiToolCall { name: string; args: unknown; result_preview: string }
+export interface Reply { text: string; tool_calls: AiToolCall[]; plan_id: string | null }
+
 export interface Api {
   homeDir(): Promise<string>;
   locations(): Promise<Location[]>;
@@ -72,6 +87,18 @@ export interface Api {
   journalItems(planId: string): Promise<EntryRow[]>;
   reveal(path: string): Promise<void>;
   diskHistory(days: number): Promise<DiskSample[]>;
+  planGet(id: string): Promise<Plan>;
+  appsList(): Promise<InstalledApp[]>;
+  appPreview(id: string): Promise<UninstallPreview>;
+  appUninstallPlan(id: string, includeMedium: boolean): Promise<Plan>;
+  projectArtifacts(idleDays: number): Promise<Artifact[]>;
+  pruneList(): Promise<PruneAction[]>;
+  pruneRun(id: string): Promise<PruneResult>;
+  careRules(): Promise<Rule[]>;
+  careSave(rule: Rule): Promise<void>;
+  careRun(id: string): Promise<RuleOutcome>;
+  aiProviders(): Promise<Provider[]>;
+  aiChat(provider: Provider, model: string, history: ChatMessage[], message: string): Promise<Reply>;
   trashList(): Promise<TrashEntry[]>;
   trashRestore(ids: string[]): Promise<number>;
   trashPurge(ids: string[]): Promise<number>;

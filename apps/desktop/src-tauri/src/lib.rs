@@ -386,6 +386,132 @@ fn open_privacy_settings() -> R<()> {
 }
 
 #[tauri::command]
+fn plan_get(id: String) -> R<Plan> {
+    Journal::open_default()
+        .and_then(|j| j.plan(&id))
+        .map(|(p, _)| p)
+        .map_err(err)
+}
+
+#[tauri::command]
+async fn apps_list() -> Vec<ebb_core::apps::InstalledApp> {
+    tauri::async_runtime::spawn_blocking(ebb_core::apps::installed_apps)
+        .await
+        .unwrap_or_default()
+}
+
+#[tauri::command]
+async fn app_preview(id: String) -> R<ebb_core::apps::UninstallPreview> {
+    tauri::async_runtime::spawn_blocking(move || ebb_core::apps::preview(&id))
+        .await
+        .map_err(err)?
+        .map_err(err)
+}
+
+/// Uygulama + artıkları için plan üretir ve kaydeder; uygulama normal plan akışıyla (onay) yapılır.
+#[tauri::command]
+async fn app_uninstall_plan(id: String, include_medium: bool) -> R<Plan> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let pv = ebb_core::apps::preview(&id)?;
+        let plan = Plan::from_paths(&ebb_core::apps::uninstall_paths(&pv, include_medium));
+        Journal::open_default()
+            .and_then(|j| j.save_plan(&plan))
+            .map(|()| plan)
+    })
+    .await
+    .map_err(err)?
+    .map_err(err)
+}
+
+#[tauri::command]
+async fn project_artifacts(
+    idle_days: u64,
+    state: State<'_, AppState>,
+) -> R<Vec<ebb_core::projects::Artifact>> {
+    state.cancel.store(false, Ordering::Relaxed);
+    let cancel = state.cancel.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        ebb_core::projects::find_artifacts(&ebb_core::projects::default_roots(), idle_days, &cancel)
+    })
+    .await
+    .map_err(err)?
+    .map_err(err)
+}
+
+#[tauri::command]
+async fn prune_list() -> Vec<ebb_core::prune::PruneAction> {
+    tauri::async_runtime::spawn_blocking(ebb_core::prune::available)
+        .await
+        .unwrap_or_default()
+}
+
+#[tauri::command]
+async fn prune_run(id: String) -> R<ebb_core::prune::PruneResult> {
+    tauri::async_runtime::spawn_blocking(move || ebb_core::prune::run(&id))
+        .await
+        .map_err(err)?
+        .map_err(err)
+}
+
+#[tauri::command]
+fn care_rules() -> R<Vec<ebb_core::autocare::Rule>> {
+    let j = Journal::open_default().map_err(err)?;
+    let mut rules = j.rules().map_err(err)?;
+    if rules.is_empty() {
+        for r in ebb_core::autocare::default_rules() {
+            j.save_rule(&r).map_err(err)?;
+        }
+        rules = j.rules().map_err(err)?;
+    }
+    Ok(rules)
+}
+
+#[tauri::command]
+fn care_save(rule: ebb_core::autocare::Rule) -> R<()> {
+    Journal::open_default()
+        .and_then(|j| j.save_rule(&rule))
+        .map_err(err)
+}
+
+#[tauri::command]
+async fn care_run(id: String) -> R<ebb_core::autocare::RuleOutcome> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let j = Journal::open_default()?;
+        let rule = j
+            .rules()?
+            .into_iter()
+            .find(|r| r.id == id)
+            .ok_or_else(|| ebb_core::Error::NotFound(format!("rule {id}")))?;
+        ebb_core::autocare::run_rule(&j, &rule)
+    })
+    .await
+    .map_err(err)?
+    .map_err(err)
+}
+
+#[tauri::command]
+async fn ai_providers() -> Vec<ebb_ai::Provider> {
+    tauri::async_runtime::spawn_blocking(ebb_ai::detect)
+        .await
+        .unwrap_or_default()
+}
+
+#[tauri::command]
+async fn ai_chat(
+    provider: ebb_ai::Provider,
+    model: String,
+    history: Vec<ebb_ai::ChatMessage>,
+    message: String,
+) -> R<ebb_ai::Reply> {
+    tauri::async_runtime::spawn_blocking(move || {
+        ebb_ai::chat(&provider, &model, &history, &message)
+    })
+    .await
+    .map_err(err)?
+    .map_err(err)
+}
+
+#[tauri::command]
 fn disk_history(days: u32) -> R<Vec<ebb_core::history::DiskSample>> {
     Journal::open_default()
         .and_then(|j| j.disk_history(days))
@@ -507,6 +633,16 @@ fn build_tray(app: &tauri::App) -> tauri::Result<()> {
                 {
                     let _ = j.record_disk(d.total, d.free);
                 }
+                // Auto Care: zamanı gelen kurallar saatte bir kontrol edilir; sonuçlar arayüze olay olarak gider.
+                if tick.is_multiple_of(60)
+                    && let Ok(j) = Journal::open_default()
+                {
+                    let free_pct = d.free as f32 / d.total.max(1) as f32 * 100.0;
+                    let now = ebb_core::plan::now();
+                    for o in ebb_core::autocare::run_due(&j, now, free_pct) {
+                        let _ = handle.emit("ebb://care", &o);
+                    }
+                }
                 let line = format!("{} free of {}", human(d.free), human(d.total));
                 let _ = free.set_text(&line);
                 if let Some(tray) = handle.tray_by_id("main") {
@@ -571,6 +707,18 @@ pub fn run() {
             journal_list,
             journal_items,
             disk_history,
+            plan_get,
+            apps_list,
+            app_preview,
+            app_uninstall_plan,
+            project_artifacts,
+            prune_list,
+            prune_run,
+            care_rules,
+            care_save,
+            care_run,
+            ai_providers,
+            ai_chat,
             trash_list,
             trash_restore,
             trash_purge,
