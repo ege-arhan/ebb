@@ -301,7 +301,7 @@ fn build_tray(app: &tauri::App) -> tauri::Result<()> {
                     let _ = tray.set_tooltip(Some(format!("Ebb · {line}")));
                 }
             }
-            if tick % 10 == 0
+            if tick.is_multiple_of(10)
                 && let Ok(c) = catalog::load(None)
             {
                 let f = catalog::findings(&c, false);
