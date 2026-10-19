@@ -265,9 +265,13 @@ pub fn default_roots() -> LeftoverRoots {
 /// Kökler altında yalnızca uygulamaya ait girdileri bulur. Bundle kimliği eşleşmesi = high,
 /// tam ad eşleşmesi = medium. Kökün kendisini ya da üst klasörleri asla döndürmez.
 pub fn leftovers_in(roots: &LeftoverRoots, name: &str, bundle_id: Option<&str>) -> Vec<Leftover> {
+    // Apple uygulamalarının artığı aranmaz.
+    if bundle_id.is_some_and(|b| b.to_lowercase().starts_with("com.apple.")) {
+        return vec![];
+    }
     let bid = bundle_id
         .map(str::trim)
-        .filter(|b| b.len() >= 5 && b.contains('.') && !b.to_lowercase().starts_with("com.apple."));
+        .filter(|b| b.len() >= 5 && b.contains('.'));
     let nn = norm(name);
     let by_name = name_ok(&nn);
     let mut found: Vec<(PathBuf, &'static str, &'static str)> = vec![];
