@@ -65,6 +65,8 @@ export interface ChatMessage { role: "user" | "assistant" | "tool"; content: str
 export interface AiToolCall { name: string; args: unknown; result_preview: string }
 export interface Reply { text: string; tool_calls: AiToolCall[]; plan_id: string | null }
 
+export interface TrayConfig { title: string; lines: string[] }
+
 export interface Api {
   homeDir(): Promise<string>;
   locations(): Promise<Location[]>;
@@ -87,6 +89,8 @@ export interface Api {
   journalItems(planId: string): Promise<EntryRow[]>;
   reveal(path: string): Promise<void>;
   diskHistory(days: number): Promise<DiskSample[]>;
+  trayGet(): Promise<TrayConfig>;
+  traySet(config: TrayConfig): Promise<void>;
   planGet(id: string): Promise<Plan>;
   appsList(): Promise<InstalledApp[]>;
   appPreview(id: string): Promise<UninstallPreview>;

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1
+- **Responsive menu:** the sidebar is full on wide windows, an icon rail on medium ones and a slide-in drawer (hamburger) on narrow ones; the window can now be much smaller.
+- **Menu bar / tray you can configure:** choose what shows next to the icon (free space, safe to clean, memory, Trash size, health score) and which lines appear in the menu. New menu entries: Open Trash, Speed up.
+
 ## 0.5.0
 - **Uninstall apps completely**: app + leftovers in one reviewed plan (macOS, Windows, Linux).
 - **Developer cleanup**: rebuildable project folders (node_modules, target, .venv, Pods…) in idle projects, and tools' own cleanup commands (Docker, Homebrew, Xcode simulators, npm, pnpm, pip, go, conda).

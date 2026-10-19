@@ -1,3 +1,5 @@
+mod tray;
+
 use ebb_core::{
     agents::{self, AiStore},
     catalog::{self, Finding},
@@ -12,12 +14,7 @@ use std::sync::{
     Arc,
     atomic::{AtomicBool, Ordering},
 };
-use tauri::{
-    Emitter, Manager, State,
-    ipc::Channel,
-    menu::{Menu, MenuItem, PredefinedMenuItem},
-    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-};
+use tauri::{Manager, State, ipc::Channel};
 
 #[derive(Default)]
 struct AppState {
@@ -512,6 +509,19 @@ async fn ai_chat(
 }
 
 #[tauri::command]
+fn tray_get() -> tray::TrayConfig {
+    tray::load()
+}
+
+#[tauri::command]
+async fn tray_set(app: tauri::AppHandle, config: tray::TrayConfig) -> R<()> {
+    tray::save(&config).map_err(err)?;
+    tauri::async_runtime::spawn_blocking(move || tray::update(&app))
+        .await
+        .map_err(err)
+}
+
+#[tauri::command]
 fn disk_history(days: u32) -> R<Vec<ebb_core::history::DiskSample>> {
     Journal::open_default()
         .and_then(|j| j.disk_history(days))
@@ -539,147 +549,12 @@ fn reveal(path: String) -> R<()> {
     tauri_plugin_opener::reveal_item_in_dir(path).map_err(err)
 }
 
-fn show_main(app: &tauri::AppHandle) {
+pub(crate) fn show_main(app: &tauri::AppHandle) {
     if let Some(w) = app.get_webview_window("main") {
         let _ = w.show();
         let _ = w.unminimize();
         let _ = w.set_focus();
     }
-}
-
-fn human(b: u64) -> String {
-    const U: [&str; 5] = ["B", "KB", "MB", "GB", "TB"];
-    let (mut v, mut i) = (b as f64, 0);
-    while v >= 1000.0 && i < 4 {
-        v /= 1000.0;
-        i += 1;
-    }
-    if i == 0 {
-        format!("{b} B")
-    } else if v >= 100.0 {
-        format!("{v:.0} {}", U[i])
-    } else {
-        format!("{v:.1} {}", U[i])
-    }
-}
-
-/// Menü çubuğu (macOS) / sistem tepsisi (Windows, Linux): disk durumu, hızlı eylemler, Çık.
-fn build_tray(app: &tauri::App) -> tauri::Result<()> {
-    let handle = app.handle().clone();
-    let free = MenuItem::with_id(app, "free", "Reading disk…", false, None::<&str>)?;
-    let safe = MenuItem::with_id(app, "safe", "Looking for caches…", false, None::<&str>)?;
-    let open = MenuItem::with_id(app, "open", "Open Ebb", true, None::<&str>)?;
-    let clean = MenuItem::with_id(app, "clean", "Review cleanup…", true, None::<&str>)?;
-    let scan = MenuItem::with_id(app, "scan", "Scan home folder", true, None::<&str>)?;
-    let connect = MenuItem::with_id(app, "connect", "Connect AI assistants…", true, None::<&str>)?;
-    let quit = MenuItem::with_id(app, "quit", "Quit Ebb", true, Some("CmdOrCtrl+Q"))?;
-    let menu = Menu::with_items(
-        app,
-        &[
-            &free,
-            &safe,
-            &PredefinedMenuItem::separator(app)?,
-            &open,
-            &clean,
-            &scan,
-            &connect,
-            &PredefinedMenuItem::separator(app)?,
-            &quit,
-        ],
-    )?;
-    let template = cfg!(target_os = "macos");
-    let icon = tauri::image::Image::from_bytes(if template {
-        include_bytes!("../icons/tray-template.png")
-    } else {
-        include_bytes!("../icons/tray-color.png")
-    })?;
-    TrayIconBuilder::with_id("main")
-        .icon(icon)
-        .icon_as_template(template)
-        .tooltip("Ebb")
-        .menu(&menu)
-        // macOS: sol tık menüyü açar (menü çubuğu alışkanlığı). Windows: sol tık pencereyi açar, sağ tık menü.
-        .show_menu_on_left_click(template)
-        .on_menu_event(|app, ev| match ev.id().as_ref() {
-            "open" => show_main(app),
-            "quit" => app.exit(0),
-            id @ ("clean" | "scan" | "connect") => {
-                show_main(app);
-                let _ = app.emit("ebb://nav", id);
-            }
-            _ => {}
-        })
-        .on_tray_icon_event(|tray, ev| {
-            if let TrayIconEvent::Click {
-                button: MouseButton::Left,
-                button_state: MouseButtonState::Up,
-                ..
-            } = ev
-                && !cfg!(target_os = "macos")
-            {
-                show_main(tray.app_handle());
-            }
-        })
-        .build(app)?;
-
-    // Disk durumu her dakika; güvenle temizlenebilir alan (pahalı tarama) 10 dakikada bir.
-    std::thread::spawn(move || {
-        let mut tick = 0u32;
-        loop {
-            if let Some(d) = ops::disk_usage() {
-                // Boş alan geçmişi (saatte bir örnek; fazlası yok sayılır).
-                if tick.is_multiple_of(10)
-                    && let Ok(j) = Journal::open_default()
-                {
-                    let _ = j.record_disk(d.total, d.free);
-                }
-                // Auto Care: zamanı gelen kurallar saatte bir kontrol edilir; sonuçlar arayüze olay olarak gider.
-                if tick.is_multiple_of(60)
-                    && let Ok(j) = Journal::open_default()
-                {
-                    let free_pct = d.free as f32 / d.total.max(1) as f32 * 100.0;
-                    let now = ebb_core::plan::now();
-                    for o in ebb_core::autocare::run_due(&j, now, free_pct) {
-                        let _ = handle.emit("ebb://care", &o);
-                        {
-                            use tauri_plugin_notification::NotificationExt;
-                            let _ = handle
-                                .notification()
-                                .builder()
-                                .title("Ebb · Auto Care")
-                                .body(&o.message)
-                                .show();
-                        }
-                    }
-                }
-                let line = format!("{} free of {}", human(d.free), human(d.total));
-                let _ = free.set_text(&line);
-                if let Some(tray) = handle.tray_by_id("main") {
-                    #[cfg(target_os = "macos")]
-                    let _ = tray.set_title(Some(human(d.free)));
-                    let _ = tray.set_tooltip(Some(format!("Ebb · {line}")));
-                }
-            }
-            if tick.is_multiple_of(30)
-                && let Ok(c) = catalog::load(None)
-            {
-                let f = catalog::findings(&c, false);
-                let s: u64 = f
-                    .iter()
-                    .filter(|x| x.safety == catalog::Safety::Safe)
-                    .map(|x| x.size)
-                    .sum();
-                let _ = safe.set_text(if s > 0 {
-                    format!("↓ {} can ebb safely", human(s))
-                } else {
-                    "Nothing safe to clean".into()
-                });
-            }
-            tick += 1;
-            std::thread::sleep(std::time::Duration::from_secs(60));
-        }
-    });
-    Ok(())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -692,7 +567,7 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .manage(AppState::default())
         .setup(|app| {
-            build_tray(app)?;
+            tray::build(app)?;
             Ok(())
         })
         // Pencereyi kapatmak uygulamayı bitirmez, tepsiye indirir; çıkış tepsi menüsünden ya da Cmd/Ctrl+Q ile.
@@ -717,6 +592,8 @@ pub fn run() {
             journal_list,
             journal_items,
             disk_history,
+            tray_get,
+            tray_set,
             plan_get,
             apps_list,
             app_preview,

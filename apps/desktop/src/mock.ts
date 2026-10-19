@@ -218,6 +218,8 @@ export const mockApi: Api = {
   async trashPurge(ids) { await wait(400); const b = trash.filter((x) => ids.includes(x.id)).reduce((a, x) => a + x.size, 0); trash = trash.filter((x) => !ids.includes(x.id)); used -= b; return b; },
   async trashEmpty() { await wait(700); const b = trash.reduce((a, x) => a + x.size, 0); trash = []; used -= b; return b; },
   openPrivacySettings: async () => {},
+  trayGet: async () => ({ title: "free", lines: ["free", "safe", "trash"] }),
+  traySet: async () => {},
   async planGet(id) { return plans.get(id) ?? { id, created: Date.now() / 1000, items: [], total: 0, skipped: [] }; },
   appsList: async () => { await wait(300); return appList.map((a) => ({ ...a })); },
   async appPreview(id) {

@@ -1,4 +1,4 @@
-import { AppWindow, Bot, CalendarClock, Command, Gauge, Hammer, History, Layers, MessageCircle, Plug, ScanSearch, Settings as Cog, ShieldCheck, Sparkles, Trash2, Undo2, Waves } from "lucide-react";
+import { AppWindow, Bot, Menu as MenuIcon, PanelLeftClose, PanelLeftOpen, X, CalendarClock, Command, Gauge, Hammer, History, Layers, MessageCircle, Plug, ScanSearch, Settings as Cog, ShieldCheck, Sparkles, Trash2, Undo2, Waves } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Fragment, Suspense, lazy, useEffect, useMemo, useState } from "react";
 import type { Key } from "./i18n";
@@ -44,6 +44,14 @@ export default function App() {
   const [palette, setPalette] = useState(false);
   const [startScan, setStartScan] = useState(() => location.search.includes("autoscan"));
   const [welcome, setWelcome] = useState(() => !seen());
+  // Sol menü: geniş pencerede tam, orta boyda simge şeridi, dar pencerede hamburgerle açılan çekmece.
+  const [vw, setVw] = useState(window.innerWidth);
+  const [collapsed, setCollapsed] = useState(() => { try { return localStorage.getItem("ebb.rail") === "mini"; } catch { return false; } });
+  const [drawer, setDrawer] = useState(false);
+  useEffect(() => { const f = () => setVw(window.innerWidth); window.addEventListener("resize", f); return () => window.removeEventListener("resize", f); }, []);
+  const mode = vw < 760 ? "drawer" : vw < 1060 || collapsed ? "mini" : "full";
+  const toggleRail = () => setCollapsed((c) => { try { localStorage.setItem("ebb.rail", c ? "full" : "mini"); } catch { /* yok say */ } return !c; });
+  useEffect(() => { if (mode !== "drawer") setDrawer(false); }, [mode]);
 
   const closeWelcome = (to?: "scan" | "connect") => {
     markSeen(); setWelcome(false);
@@ -57,9 +65,8 @@ export default function App() {
     let un: (() => void) | undefined;
     void import("@tauri-apps/api/event").then(({ listen }) =>
       listen<string>("ebb://nav", (e) => {
-        if (e.payload === "clean") setScreen("clean");
-        if (e.payload === "connect") setScreen("connect");
         if (e.payload === "scan") { setScreen("explore"); setStartScan(true); }
+        else if (NAV.some((n) => n.id === e.payload)) setScreen(e.payload as Screen);
       }).then((u) => { un = u; }),
     );
     return () => un?.();
@@ -96,15 +103,19 @@ export default function App() {
   const pending = clients.filter((c) => c.installed && !c.connected).length;
 
   return (
-    <div className="shell">
-      <aside className="rail">
+    <div className="shell" data-rail={mode}>
+      {mode === "drawer" && !drawer && <button className={`menu-btn${isMac ? " mac" : ""}`} aria-label={t("menuToggle")} onClick={() => setDrawer(true)}><MenuIcon size={18} aria-hidden /></button>}
+      {mode === "drawer" && drawer && <div className="rail-backdrop" onClick={() => setDrawer(false)} />}
+      <aside className={`rail${drawer ? " open" : ""}`}>
         <div className="drag" data-tauri-drag-region />
+        {mode === "drawer" ? <button className="rail-toggle" style={{ display: "grid" }} aria-label={t("menuClose")} onClick={() => setDrawer(false)}><X size={16} aria-hidden /></button>
+          : vw >= 1060 && <button className="rail-toggle" aria-label={t("menuToggle")} onClick={toggleRail}>{collapsed ? <PanelLeftOpen size={16} aria-hidden /> : <PanelLeftClose size={16} aria-hidden />}</button>}
         <div className="brand"><svg viewBox="0 0 32 32" width="22" height="22" aria-hidden><path d="M3 18c3-4 6-4 9 0s6 4 9 0 4-2 8-2v12H3z" fill="currentColor" /></svg><span>Ebb</span></div>
         <nav aria-label="Main">
           {NAV.map(({ id, icon: Icon, ...rest }) => (
             <Fragment key={id}>
               {"group" in rest && rest.group && <p className="navgroup">{t(rest.group as Key)}</p>}
-                <button className={screen === id ? "on" : ""} aria-current={screen === id ? "page" : undefined} onClick={() => setScreen(id)}>
+                <button className={screen === id ? "on" : ""} title={t(id)} aria-label={t(id)} aria-current={screen === id ? "page" : undefined} onClick={() => { setScreen(id); setDrawer(false); }}>
               {screen === id && <motion.span layoutId="navpill" className="navpill" transition={{ type: "spring", stiffness: 520, damping: 40 }} />}
               <Icon size={17} aria-hidden /> <span className="nav-label">{t(id)}</span>
               {id === "connect" && pending > 0 && <span className="dot" aria-label={`${pending}`}>{pending}</span>}
