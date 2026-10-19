@@ -1,5 +1,6 @@
 //! ebb-core: tarama, katalog, plan/uygula/geri al. CLI, MCP ve GUI bu çekirdeği paylaşır.
 pub mod agents;
+pub mod autocare;
 pub mod catalog;
 pub mod connect;
 pub mod dupes;
