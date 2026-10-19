@@ -26,9 +26,9 @@
   <img src="docs/demo.gif" alt="Ebb demo: the tide reacts to the pointer, a safe cleanup is reviewed and moved to the Trash, and the water recedes" width="860">
 </p>
 <p align="center">
-  <img src="docs/screenshots/tide.png" alt="Tide screen" width="426">
-  <img src="docs/screenshots/optimize.png" alt="Optimize: space back, nothing deleted" width="426">
-  <img src="docs/screenshots/speed.png" alt="Speed up: health, memory, apps, startup" width="426">
+  <img src="docs/screenshots/tide.png" alt="Tide screen" width="280">
+  <img src="docs/screenshots/optimize.png" alt="Optimize: space back, nothing deleted" width="280">
+  <img src="docs/screenshots/speed.png" alt="Speed up: health, memory, apps, startup" width="280">
 </p>
 
 ## Why Ebb
