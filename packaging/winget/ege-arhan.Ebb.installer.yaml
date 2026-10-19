@@ -1,0 +1,14 @@
+PackageIdentifier: ege-arhan.Ebb
+PackageVersion: 0.5.0
+InstallerType: nullsoft
+Scope: user
+InstallModes: [interactive, silent]
+InstallerSwitches:
+  Silent: /S
+  SilentWithProgress: /S
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/ege-arhan/ebb/releases/download/v0.5.0/Ebb_0.5.0_x64-setup.exe
+    InstallerSha256: 7037927126B908C8ACB51CC92284BA1306EBF689675FCEE85545A7E97CB899DD
+ManifestType: installer
+ManifestVersion: 1.6.0
