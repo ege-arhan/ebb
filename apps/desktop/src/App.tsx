@@ -39,7 +39,27 @@ const fromHash = (): Screen => { const h = location.hash.slice(1); return (NAV.s
 const markSeen = () => { try { localStorage.setItem("ebb.welcome", "1"); } catch { /* yok say */ } };
 
 export default function App() {
-  const { t, setTheme, theme, disk, clients, update, trashSize } = useApp();
+  const { t, setTheme, theme, disk, clients, update, trashSize, toast } = useApp();
+  const [updating, setUpdating] = useState(false);
+  // Masaüstünde imzalı güncelleyiciyle yerinde güncelle; olmazsa sürüm sayfasını aç.
+  const installUpdate = async () => {
+    if (!update) return;
+    if (!inTauri) { void api.openRelease(update.url); return; }
+    setUpdating(true); toast(t("updating"));
+    try {
+      const { check } = await import("@tauri-apps/plugin-updater");
+      const { relaunch } = await import("@tauri-apps/plugin-process");
+      const u = await check();
+      if (!u) throw new Error("no update");
+      await u.downloadAndInstall();
+      toast(t("updateReady"));
+      await relaunch();
+    } catch {
+      toast(t("updateFailed"));
+      void api.openRelease(update.url);
+    }
+    setUpdating(false);
+  };
   const [screen, setScreen] = useState<Screen>(fromHash);
   const [palette, setPalette] = useState(false);
   const [startScan, setStartScan] = useState(() => location.search.includes("autoscan"));
@@ -125,7 +145,7 @@ export default function App() {
           ))}
         </nav>
         {update && (
-          <button className="update-pill" onClick={() => api.openRelease(update.url)}>
+          <button className="update-pill" disabled={updating} onClick={installUpdate}>
             <Sparkles size={14} aria-hidden /> <span>{t("updateAvail").replace("{v}", update.version)}</span> <b>{t("updateGet")}</b>
           </button>
         )}

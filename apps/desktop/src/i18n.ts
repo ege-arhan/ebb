@@ -57,6 +57,7 @@ const en = {
   trayTitle: "Menu bar and tray", trayLead: "Choose what Ebb shows next to its icon and in its menu.", trayShown: "Shown next to the icon", trayMenu: "Shown in the menu", trayNone: "Nothing (icon only)",
   tr_free: "Free space", tr_safe: "Safe to clean", tr_memory: "Memory", tr_trash: "Trash size", tr_health: "Health score", trayNote: "On Windows and Linux the value appears in the icon's tooltip.",
   menuToggle: "Menu", menuClose: "Close menu",
+  updating: "Updating Ebb…", updateFailed: "Could not update in place. Opening the download page instead.", updateReady: "Updated. Restarting…",
   // tide
   tideLead: "Your disk as a tide: the water is what you use, the pale band is what Ebb can safely let go.",
   basinHint: "Water level is used space. The pale band is the safe part that can recede.",
@@ -177,6 +178,7 @@ const tr: Record<Key, string> = {
   trayTitle: "Menü çubuğu ve tepsi", trayLead: "Ebb'in simgesinin yanında ve menüsünde ne göstereceğini seç.", trayShown: "Simgenin yanında göster", trayMenu: "Menüde göster", trayNone: "Hiçbir şey (yalnızca simge)",
   tr_free: "Boş alan", tr_safe: "Temizlenebilir", tr_memory: "Bellek", tr_trash: "Çöp Kutusu boyutu", tr_health: "Sağlık puanı", trayNote: "Windows ve Linux'ta değer, simgenin üzerine gelince ipucunda görünür.",
   menuToggle: "Menü", menuClose: "Menüyü kapat",
+  updating: "Ebb güncelleniyor…", updateFailed: "Yerinde güncellenemedi. Bunun yerine indirme sayfası açılıyor.", updateReady: "Güncellendi. Yeniden başlatılıyor…",
   tide: "Gelgit", explore: "Keşfet", clean: "Temizle", agents: "AI depolama", connect: "AI'a bağla", journal: "Günlük", settings: "Ayarlar",
   free: "boş", of: "/", used: "dolu", canEbb: "çekilebilir", open: "Aç", back: "Geri", cancel: "Vazgeç", copy: "Kopyala", copied: "Kopyalandı",
   files: "dosya", loading: "Etrafa bakılıyor", reveal: "Klasörde göster", size: "Boyut", path: "Yol", search: "Ara", all: "Tümü",

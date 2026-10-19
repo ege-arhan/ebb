@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.5.2
+- The update button installs the new version in place (signed updater) and restarts Ebb; falls back to the download page if that fails.
+
 ## 0.5.1
 - **Responsive menu:** the sidebar is full on wide windows, an icon rail on medium ones and a slide-in drawer (hamburger) on narrow ones; the window can now be much smaller.
 - **Menu bar / tray you can configure:** choose what shows next to the icon (free space, safe to clean, memory, Trash size, health score) and which lines appear in the menu. New menu entries: Open Trash, Speed up.
