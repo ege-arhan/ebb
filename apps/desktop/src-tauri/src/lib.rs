@@ -169,16 +169,26 @@ struct DupResult {
 
 /// Kopyaları bulur ve Ebb'in daha önce klonladıklarını "optimize" olarak işaretler.
 #[tauri::command]
-async fn find_duplicates(root: Option<String>, on_progress: Channel<ebb_core::dupes::DupProgress>, state: State<'_, AppState>) -> R<DupResult> {
+async fn find_duplicates(
+    root: Option<String>,
+    on_progress: Channel<ebb_core::dupes::DupProgress>,
+    state: State<'_, AppState>,
+) -> R<DupResult> {
     state.cancel.store(false, Ordering::Relaxed);
     let cancel = state.cancel.clone();
-    let root = root.map(PathBuf::from).or_else(dirs::home_dir).ok_or("no folder")?;
+    let root = root
+        .map(PathBuf::from)
+        .or_else(dirs::home_dir)
+        .ok_or("no folder")?;
     tauri::async_runtime::spawn_blocking(move || {
         let mut groups = ebb_core::dupes::find_duplicates(&root, 1_000_000, &cancel, |p| {
             let _ = on_progress.send(p);
         })?;
         ebb_core::optimize::mark_optimized(&Journal::open_default()?, &mut groups);
-        Ok::<_, ebb_core::Error>(DupResult { groups, clone_supported: ebb_core::optimize::clone_supported(&root) })
+        Ok::<_, ebb_core::Error>(DupResult {
+            groups,
+            clone_supported: ebb_core::optimize::clone_supported(&root),
+        })
     })
     .await
     .map_err(err)?
@@ -186,45 +196,70 @@ async fn find_duplicates(root: Option<String>, on_progress: Channel<ebb_core::du
 }
 
 #[tauri::command]
-async fn optimize_clones(groups: Vec<ebb_core::dupes::DupGroup>) -> R<ebb_core::optimize::OptimizeReport> {
-    tauri::async_runtime::spawn_blocking(move || Journal::open_default().and_then(|j| ebb_core::optimize::dedupe_with_clones(&j, &groups)))
-        .await
-        .map_err(err)?
-        .map_err(err)
+async fn optimize_clones(
+    groups: Vec<ebb_core::dupes::DupGroup>,
+) -> R<ebb_core::optimize::OptimizeReport> {
+    tauri::async_runtime::spawn_blocking(move || {
+        Journal::open_default().and_then(|j| ebb_core::optimize::dedupe_with_clones(&j, &groups))
+    })
+    .await
+    .map_err(err)?
+    .map_err(err)
 }
 
 #[tauri::command]
 async fn compress(path: String) -> R<ebb_core::optimize::CompressReport> {
-    tauri::async_runtime::spawn_blocking(move || ebb_core::optimize::compress(std::path::Path::new(&path))).await.map_err(err)?.map_err(err)
+    tauri::async_runtime::spawn_blocking(move || {
+        ebb_core::optimize::compress(std::path::Path::new(&path))
+    })
+    .await
+    .map_err(err)?
+    .map_err(err)
 }
 
 #[tauri::command]
 async fn decompress(path: String) -> R<ebb_core::optimize::CompressReport> {
-    tauri::async_runtime::spawn_blocking(move || ebb_core::optimize::decompress(std::path::Path::new(&path))).await.map_err(err)?.map_err(err)
+    tauri::async_runtime::spawn_blocking(move || {
+        ebb_core::optimize::decompress(std::path::Path::new(&path))
+    })
+    .await
+    .map_err(err)?
+    .map_err(err)
 }
 
 #[tauri::command]
 async fn large_old(root: Option<String>) -> R<Vec<ebb_core::finders::FoundFile>> {
-    let root = root.map(PathBuf::from).or_else(dirs::home_dir).ok_or("no folder")?;
-    tauri::async_runtime::spawn_blocking(move || ebb_core::finders::large_old_files(&root, 200_000_000, 180, 60, &AtomicBool::new(false)))
-        .await
-        .map_err(err)?
-        .map_err(err)
+    let root = root
+        .map(PathBuf::from)
+        .or_else(dirs::home_dir)
+        .ok_or("no folder")?;
+    tauri::async_runtime::spawn_blocking(move || {
+        ebb_core::finders::large_old_files(&root, 200_000_000, 180, 60, &AtomicBool::new(false))
+    })
+    .await
+    .map_err(err)?
+    .map_err(err)
 }
 
 #[tauri::command]
 async fn old_installers() -> Vec<ebb_core::finders::FoundFile> {
-    tauri::async_runtime::spawn_blocking(|| ebb_core::finders::old_installers(14)).await.unwrap_or_default()
+    tauri::async_runtime::spawn_blocking(|| ebb_core::finders::old_installers(14))
+        .await
+        .unwrap_or_default()
 }
 
 #[tauri::command]
 async fn health() -> R<ebb_core::system::Health> {
-    tauri::async_runtime::spawn_blocking(ebb_core::system::health).await.map_err(err)
+    tauri::async_runtime::spawn_blocking(ebb_core::system::health)
+        .await
+        .map_err(err)
 }
 
 #[tauri::command]
 async fn top_apps() -> R<Vec<ebb_core::system::AppUsage>> {
-    tauri::async_runtime::spawn_blocking(|| ebb_core::system::top_apps(15)).await.map_err(err)
+    tauri::async_runtime::spawn_blocking(|| ebb_core::system::top_apps(15))
+        .await
+        .map_err(err)
 }
 
 #[tauri::command]
@@ -234,7 +269,9 @@ fn quit_app(pids: Vec<u32>) -> R<usize> {
 
 #[tauri::command]
 async fn startup_items() -> R<Vec<ebb_core::system::StartupItem>> {
-    tauri::async_runtime::spawn_blocking(ebb_core::system::startup_items).await.map_err(err)
+    tauri::async_runtime::spawn_blocking(ebb_core::system::startup_items)
+        .await
+        .map_err(err)
 }
 
 #[tauri::command]

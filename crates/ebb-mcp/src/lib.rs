@@ -48,7 +48,9 @@ fn str_list(a: &Value, key: &str) -> Result<Option<Vec<String>>, String> {
 }
 
 fn home() -> Option<PathBuf> {
-    std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from)
+    std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(PathBuf::from)
 }
 
 fn arg_path(a: &Value) -> Result<PathBuf, String> {
@@ -123,21 +125,52 @@ fn call(name: &str, a: &Value) -> Result<Value, String> {
             }
         }
         "ebb_duplicates" => {
-            let root = a.get("path").and_then(Value::as_str).map(PathBuf::from).or_else(home).ok_or("no home folder")?;
-            let mut g = ebb_core::dupes::find_duplicates(&root, n("min_mb", 1) as u64 * 1_000_000, &std::sync::atomic::AtomicBool::new(false), |_| {}).map_err(e)?;
+            let root = a
+                .get("path")
+                .and_then(Value::as_str)
+                .map(PathBuf::from)
+                .or_else(home)
+                .ok_or("no home folder")?;
+            let mut g = ebb_core::dupes::find_duplicates(
+                &root,
+                n("min_mb", 1) as u64 * 1_000_000,
+                &std::sync::atomic::AtomicBool::new(false),
+                |_| {},
+            )
+            .map_err(e)?;
             if let Ok(j) = Journal::open_default() {
                 ebb_core::optimize::mark_optimized(&j, &mut g);
             }
-            let total: u64 = g.iter().filter(|x| !x.optimized).map(|x| x.reclaimable).sum();
+            let total: u64 = g
+                .iter()
+                .filter(|x| !x.optimized)
+                .map(|x| x.reclaimable)
+                .sum();
             g.truncate(30);
-            Ok(json!({"reclaimable": total, "groups": g, "next": "A human can turn copies into space-sharing clones with `ebb optimize` or the app's Optimize screen."}))
+            Ok(
+                json!({"reclaimable": total, "groups": g, "next": "A human can turn copies into space-sharing clones with `ebb optimize` or the app's Optimize screen."}),
+            )
         }
         "ebb_large_old_files" => {
-            let root = a.get("path").and_then(Value::as_str).map(PathBuf::from).or_else(home).ok_or("no home folder")?;
-            let large = ebb_core::finders::large_old_files(&root, n("min_mb", 200) as u64 * 1_000_000, n("days", 180) as u64, 40, &std::sync::atomic::AtomicBool::new(false)).map_err(e)?;
+            let root = a
+                .get("path")
+                .and_then(Value::as_str)
+                .map(PathBuf::from)
+                .or_else(home)
+                .ok_or("no home folder")?;
+            let large = ebb_core::finders::large_old_files(
+                &root,
+                n("min_mb", 200) as u64 * 1_000_000,
+                n("days", 180) as u64,
+                40,
+                &std::sync::atomic::AtomicBool::new(false),
+            )
+            .map_err(e)?;
             Ok(json!({"large": large, "installers": ebb_core::finders::old_installers(14)}))
         }
-        "ebb_system_health" => Ok(json!({"health": ebb_core::system::health(), "apps": ebb_core::system::top_apps(8)})),
+        "ebb_system_health" => {
+            Ok(json!({"health": ebb_core::system::health(), "apps": ebb_core::system::top_apps(8)}))
+        }
         _ => Err(format!("unknown tool: {name}")),
     }
 }

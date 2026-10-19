@@ -8,6 +8,9 @@ One Rust core (`ebb-core`) shared by the CLI, the MCP server and the Tauri app.
 - `plan` / `journal` – a `Plan` is data; `Journal` (SQLite) applies it to the Trash and records where each item went so it can be restored.
 - `ops` – high-level calls reused by CLI, MCP and GUI.
 - `agents` – AI agent and model storage.
+- `dupes` / `optimize` – duplicate finder (size → partial blake3 → full blake3) and copy-on-write clone dedupe (clonefile / FICLONE; re-hash, metadata copy, atomic rename) plus in-place compression (ditto --hfsCompression, compact /c). Clones are recorded so they are not offered again.
+- `finders` – large/old files and old installers.
+- `system` – memory, apps grouped by bundle, graceful quit (Apple Event on macOS), startup items (LaunchAgents, Run keys, autostart) and a health score with tips.
 
 - `connect` – detects MCP clients and writes Ebb into their config (JSON atomically, or via the client's own CLI); ownership-checked, symlink-refusing, first backup kept; `selftest` starts `ebb mcp` for real.
 

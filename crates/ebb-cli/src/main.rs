@@ -137,19 +137,65 @@ enum Cmd {
         json: bool,
     },
     /// Find duplicate files (identical content) under a path.
-    Dupes { path: Option<PathBuf>, #[arg(long, default_value_t = 1)] min_mb: u64, #[arg(long)] json: bool },
+    Dupes {
+        path: Option<PathBuf>,
+        #[arg(long, default_value_t = 1)]
+        min_mb: u64,
+        #[arg(long)]
+        json: bool,
+    },
     /// Free space without deleting: turn duplicate copies into clones that share disk blocks (APFS, Btrfs, XFS).
-    Optimize { path: Option<PathBuf>, #[arg(long)] yes: bool, #[arg(long)] json: bool },
+    Optimize {
+        path: Option<PathBuf>,
+        #[arg(long)]
+        yes: bool,
+        #[arg(long)]
+        json: bool,
+    },
     /// Compress a folder in place (macOS APFS, Windows NTFS). Files open as before.
-    Compress { path: PathBuf, /** Undo compression */ #[arg(long)] undo: bool, #[arg(long)] yes: bool, #[arg(long)] json: bool },
+    Compress {
+        path: PathBuf,
+        /** Undo compression */
+        #[arg(long)]
+        undo: bool,
+        #[arg(long)]
+        yes: bool,
+        #[arg(long)]
+        json: bool,
+    },
     /// Large files you have not opened in months, and old installers.
-    Big { path: Option<PathBuf>, #[arg(long, default_value_t = 200)] min_mb: u64, #[arg(long, default_value_t = 180)] days: u64, #[arg(long)] json: bool },
+    Big {
+        path: Option<PathBuf>,
+        #[arg(long, default_value_t = 200)]
+        min_mb: u64,
+        #[arg(long, default_value_t = 180)]
+        days: u64,
+        #[arg(long)]
+        json: bool,
+    },
     /// System checkup: health score, memory, heavy apps, startup items.
-    System { #[arg(long)] json: bool },
+    System {
+        #[arg(long)]
+        json: bool,
+    },
     /// Heavy apps; quit one gracefully with --quit <name>.
-    Apps { #[arg(long)] quit: Option<String>, #[arg(long)] yes: bool, #[arg(long)] json: bool },
+    Apps {
+        #[arg(long)]
+        quit: Option<String>,
+        #[arg(long)]
+        yes: bool,
+        #[arg(long)]
+        json: bool,
+    },
     /// Items that start with your computer; toggle user items.
-    Startup { #[arg(long)] disable: Option<String>, #[arg(long)] enable: Option<String>, #[arg(long)] json: bool },
+    Startup {
+        #[arg(long)]
+        disable: Option<String>,
+        #[arg(long)]
+        enable: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
     /// Explain a path: size, catalog match, protection.
     Explain {
         path: PathBuf,
@@ -1016,24 +1062,42 @@ fn run() -> ebb_core::Result<()> {
         Cmd::Optimize { path, yes, json } => {
             let root = home_or(path);
             if !ebb_core::optimize::clone_supported(&root) {
-                println!("\n  This disk can't share blocks between files (needs APFS, Btrfs or XFS).\n  Use {} to see the copies and remove extra ones.\n", ui::cmd("ebb dupes"));
+                println!(
+                    "\n  This disk can't share blocks between files (needs APFS, Btrfs or XFS).\n  Use {} to see the copies and remove extra ones.\n",
+                    ui::cmd("ebb dupes")
+                );
                 return Ok(());
             }
             let j = Journal::open_default()?;
             let mut groups = find_dupes(&root, 1)?;
             ebb_core::optimize::mark_optimized(&j, &mut groups);
-            let todo: Vec<_> = groups.into_iter().filter(|g| !g.optimized && g.reclaimable > 0).collect();
+            let todo: Vec<_> = groups
+                .into_iter()
+                .filter(|g| !g.optimized && g.reclaimable > 0)
+                .collect();
             let total: u64 = todo.iter().map(|g| g.reclaimable).sum();
             if todo.is_empty() {
-                println!("\n  {} Nothing to optimize. Copies already share space.\n", style("✓").green());
+                println!(
+                    "\n  {} Nothing to optimize. Copies already share space.\n",
+                    style("✓").green()
+                );
                 return Ok(());
             }
             if !json {
                 print_dupes(&todo);
             }
-            let go = yes || (ui::tty() && !json && Confirm::with_theme(&ColorfulTheme::default())
-                .with_prompt(format!("Turn {} copies into clones and win back {}? Nothing is deleted.", todo.iter().map(|g| g.files.len() - 1).sum::<usize>(), human(total)))
-                .default(true).interact().unwrap_or(false));
+            let go = yes
+                || (ui::tty()
+                    && !json
+                    && Confirm::with_theme(&ColorfulTheme::default())
+                        .with_prompt(format!(
+                            "Turn {} copies into clones and win back {}? Nothing is deleted.",
+                            todo.iter().map(|g| g.files.len() - 1).sum::<usize>(),
+                            human(total)
+                        ))
+                        .default(true)
+                        .interact()
+                        .unwrap_or(false));
             if !go {
                 println!("  Nothing changed. Run with --yes to optimize.");
                 return Ok(());
@@ -1042,69 +1106,174 @@ fn run() -> ebb_core::Result<()> {
             let r = ebb_core::optimize::dedupe_with_clones(&j, &todo)?;
             pb.finish_and_clear();
             emit(json, &r, || {
-                println!("\n  {} {} won back · {} files now share space · nothing deleted", style("✓").green().bold(), style(human(r.saved)).green().bold(), r.files);
+                println!(
+                    "\n  {} {} won back · {} files now share space · nothing deleted",
+                    style("✓").green().bold(),
+                    style(human(r.saved)).green().bold(),
+                    r.files
+                );
                 for (p, why) in r.skipped.iter().take(5) {
-                    println!("   {} {}  {}", style("skipped").yellow(), tilde(p), dim(why));
+                    println!(
+                        "   {} {}  {}",
+                        style("skipped").yellow(),
+                        tilde(p),
+                        dim(why)
+                    );
                 }
                 println!();
             });
         }
-        Cmd::Compress { path, undo, yes, json } => {
-            let go = yes || json || !ui::tty() || Confirm::with_theme(&ColorfulTheme::default())
-                .with_prompt(format!("{} {} in place?", if undo { "Decompress" } else { "Compress" }, tilde(&path)))
-                .default(true).interact().unwrap_or(false);
+        Cmd::Compress {
+            path,
+            undo,
+            yes,
+            json,
+        } => {
+            let go = yes
+                || json
+                || !ui::tty()
+                || Confirm::with_theme(&ColorfulTheme::default())
+                    .with_prompt(format!(
+                        "{} {} in place?",
+                        if undo { "Decompress" } else { "Compress" },
+                        tilde(&path)
+                    ))
+                    .default(true)
+                    .interact()
+                    .unwrap_or(false);
             if !go {
                 return Ok(());
             }
             let pb = spinner(if undo { "Decompressing" } else { "Compressing" });
-            let r = if undo { ebb_core::optimize::decompress(&path)? } else { ebb_core::optimize::compress(&path)? };
+            let r = if undo {
+                ebb_core::optimize::decompress(&path)?
+            } else {
+                ebb_core::optimize::compress(&path)?
+            };
             pb.finish_and_clear();
             emit(json, &r, || {
                 let saved = r.before.saturating_sub(r.after);
-                println!("\n  {} {}  {} → {}{}\n", style("✓").green().bold(), tilde(&r.path), human(r.before), human(r.after),
-                    if saved > 0 { format!("  ·  {} saved", style(human(saved)).green().bold()) } else { String::new() });
+                println!(
+                    "\n  {} {}  {} → {}{}\n",
+                    style("✓").green().bold(),
+                    tilde(&r.path),
+                    human(r.before),
+                    human(r.after),
+                    if saved > 0 {
+                        format!("  ·  {} saved", style(human(saved)).green().bold())
+                    } else {
+                        String::new()
+                    }
+                );
             });
         }
-        Cmd::Big { path, min_mb, days, json } => {
+        Cmd::Big {
+            path,
+            min_mb,
+            days,
+            json,
+        } => {
             let pb = spinner("Looking for big, forgotten files");
-            let large = ebb_core::finders::large_old_files(&home_or(path), min_mb * 1_000_000, days, 40, &AtomicBool::new(false))?;
+            let large = ebb_core::finders::large_old_files(
+                &home_or(path),
+                min_mb * 1_000_000,
+                days,
+                40,
+                &AtomicBool::new(false),
+            )?;
             let inst = ebb_core::finders::old_installers(14);
             pb.finish_and_clear();
-            emit(json, &serde_json::json!({"large": large, "installers": inst}), || {
-                for (title, rows) in [("Old installers", &inst), ("Large files not opened in a while", &large)] {
-                    heading(title);
-                    if rows.is_empty() {
-                        println!("   {}", dim("nothing here"));
+            emit(
+                json,
+                &serde_json::json!({"large": large, "installers": inst}),
+                || {
+                    for (title, rows) in [
+                        ("Old installers", &inst),
+                        ("Large files not opened in a while", &large),
+                    ] {
+                        heading(title);
+                        if rows.is_empty() {
+                            println!("   {}", dim("nothing here"));
+                        }
+                        for f in rows.iter().take(20) {
+                            println!(
+                                "   {:>9}  {:>5}d  {}",
+                                style(human(f.size)).bold(),
+                                f.age_days,
+                                dim(tilde(&f.path))
+                            );
+                        }
                     }
-                    for f in rows.iter().take(20) {
-                        println!("   {:>9}  {:>5}d  {}", style(human(f.size)).bold(), f.age_days, dim(tilde(&f.path)));
-                    }
-                }
-                println!("\n  Move some to the Trash with {}\n", ui::cmd("ebb clean --paths <file> …"));
-            });
+                    println!(
+                        "\n  Move some to the Trash with {}\n",
+                        ui::cmd("ebb clean --paths <file> …")
+                    );
+                },
+            );
         }
         Cmd::System { json } => {
             let pb = spinner("Checking your system");
             let h = ebb_core::system::health();
             let apps = ebb_core::system::top_apps(8);
             pb.finish_and_clear();
-            emit(json, &serde_json::json!({"health": h, "apps": apps}), || {
-                let tone = if h.score >= 80 { console::Style::new().green() } else if h.score >= 55 { console::Style::new().yellow() } else { console::Style::new().red() };
-                println!("\n  {}  {}  {}", style("Health").bold(), tone.apply_to(format!("{}/100", h.score)).bold(), bar(h.score as f64 / 100.0, 30, &tone));
-                let m = &h.memory;
-                println!("  Memory  {} of {} in use · pressure {:.0}% · swap {}", style(human(m.used)).bold(), human(m.total), m.pressure * 100.0, human(m.swap_used));
-                heading("Tips");
-                for tip in &h.tips {
-                    let mark = match tip.severity { "good" => style("✓").green(), "warn" => style("!").yellow(), "bad" => style("✗").red(), _ => style("•").cyan() };
-                    println!("   {} {}\n     {}", mark, style(&tip.title).bold(), dim(&tip.body));
-                }
-                heading("Heavy apps");
-                let max = apps.first().map(|a| a.memory).unwrap_or(1) as f64;
-                for a in &apps {
-                    println!("   {:>9}  {}  {:<26} {}", style(human(a.memory)).bold(), bar(a.memory as f64 / max, 10, &ui::teal()), a.name, dim(format!("cpu {:.1}%", a.cpu)));
-                }
-                println!("\n  {}  quit an app     {}  startup items\n", ui::cmd("ebb apps --quit <name>"), ui::cmd("ebb startup"));
-            });
+            emit(
+                json,
+                &serde_json::json!({"health": h, "apps": apps}),
+                || {
+                    let tone = if h.score >= 80 {
+                        console::Style::new().green()
+                    } else if h.score >= 55 {
+                        console::Style::new().yellow()
+                    } else {
+                        console::Style::new().red()
+                    };
+                    println!(
+                        "\n  {}  {}  {}",
+                        style("Health").bold(),
+                        tone.apply_to(format!("{}/100", h.score)).bold(),
+                        bar(h.score as f64 / 100.0, 30, &tone)
+                    );
+                    let m = &h.memory;
+                    println!(
+                        "  Memory  {} of {} in use · pressure {:.0}% · swap {}",
+                        style(human(m.used)).bold(),
+                        human(m.total),
+                        m.pressure * 100.0,
+                        human(m.swap_used)
+                    );
+                    heading("Tips");
+                    for tip in &h.tips {
+                        let mark = match tip.severity {
+                            "good" => style("✓").green(),
+                            "warn" => style("!").yellow(),
+                            "bad" => style("✗").red(),
+                            _ => style("•").cyan(),
+                        };
+                        println!(
+                            "   {} {}\n     {}",
+                            mark,
+                            style(&tip.title).bold(),
+                            dim(&tip.body)
+                        );
+                    }
+                    heading("Heavy apps");
+                    let max = apps.first().map(|a| a.memory).unwrap_or(1) as f64;
+                    for a in &apps {
+                        println!(
+                            "   {:>9}  {}  {:<26} {}",
+                            style(human(a.memory)).bold(),
+                            bar(a.memory as f64 / max, 10, &ui::teal()),
+                            a.name,
+                            dim(format!("cpu {:.1}%", a.cpu))
+                        );
+                    }
+                    println!(
+                        "\n  {}  quit an app     {}  startup items\n",
+                        ui::cmd("ebb apps --quit <name>"),
+                        ui::cmd("ebb startup")
+                    );
+                },
+            );
         }
         Cmd::Apps { quit, yes, json } => {
             let apps = ebb_core::system::top_apps(20);
@@ -1112,13 +1281,31 @@ fn run() -> ebb_core::Result<()> {
                 None => emit(json, &apps, || {
                     heading("Apps by memory");
                     for a in &apps {
-                        println!("   {:>9}  {:<28} {}{}", style(human(a.memory)).bold(), a.name, dim(format!("cpu {:.1}%", a.cpu)), if a.quittable { "" } else { "  (system)" });
+                        println!(
+                            "   {:>9}  {:<28} {}{}",
+                            style(human(a.memory)).bold(),
+                            a.name,
+                            dim(format!("cpu {:.1}%", a.cpu)),
+                            if a.quittable { "" } else { "  (system)" }
+                        );
                     }
                     println!();
                 }),
                 Some(name) => {
-                    let a = apps.iter().find(|a| a.name.eq_ignore_ascii_case(&name)).ok_or_else(|| ebb_core::Error::NotFound(format!("app {name}")))?;
-                    let go = yes || (ui::tty() && Confirm::with_theme(&ColorfulTheme::default()).with_prompt(format!("Ask {} to quit? Save your work first.", a.name)).default(false).interact().unwrap_or(false));
+                    let a = apps
+                        .iter()
+                        .find(|a| a.name.eq_ignore_ascii_case(&name))
+                        .ok_or_else(|| ebb_core::Error::NotFound(format!("app {name}")))?;
+                    let go = yes
+                        || (ui::tty()
+                            && Confirm::with_theme(&ColorfulTheme::default())
+                                .with_prompt(format!(
+                                    "Ask {} to quit? Save your work first.",
+                                    a.name
+                                ))
+                                .default(false)
+                                .interact()
+                                .unwrap_or(false));
                     if go {
                         let n = ebb_core::system::quit_app(&a.pids)?;
                         ui::ok(format!("Asked {} to quit ({n} processes)", a.name));
@@ -1126,7 +1313,11 @@ fn run() -> ebb_core::Result<()> {
                 }
             }
         }
-        Cmd::Startup { disable, enable, json } => {
+        Cmd::Startup {
+            disable,
+            enable,
+            json,
+        } => {
             if let Some(id) = disable.as_deref() {
                 ebb_core::system::set_startup_enabled(id, false)?;
                 ui::ok(format!("Disabled {id}"));
@@ -1138,10 +1329,26 @@ fn run() -> ebb_core::Result<()> {
                 emit(json, &items, || {
                     heading("Starts with your computer");
                     for s in &items {
-                        let st = if s.enabled { style("on ").green() } else { style("off").dim() };
-                        println!("   {}  {:<40} {}", st, s.name, dim(if s.can_toggle { s.id.clone() } else { format!("{} (read only)", s.scope) }));
+                        let st = if s.enabled {
+                            style("on ").green()
+                        } else {
+                            style("off").dim()
+                        };
+                        println!(
+                            "   {}  {:<40} {}",
+                            st,
+                            s.name,
+                            dim(if s.can_toggle {
+                                s.id.clone()
+                            } else {
+                                format!("{} (read only)", s.scope)
+                            })
+                        );
                     }
-                    println!("\n  {}\n", dim("Turn one off with: ebb startup --disable <id>"));
+                    println!(
+                        "\n  {}\n",
+                        dim("Turn one off with: ebb startup --disable <id>")
+                    );
                 });
             }
         }
@@ -1153,22 +1360,55 @@ fn run() -> ebb_core::Result<()> {
     Ok(())
 }
 
-fn find_dupes(root: &std::path::Path, min_mb: u64) -> ebb_core::Result<Vec<ebb_core::dupes::DupGroup>> {
+fn find_dupes(
+    root: &std::path::Path,
+    min_mb: u64,
+) -> ebb_core::Result<Vec<ebb_core::dupes::DupGroup>> {
     let pb = spinner(&format!("Comparing files under {}", tilde(root)));
-    let r = ebb_core::dupes::find_duplicates(root, min_mb * 1_000_000, &AtomicBool::new(false), |p| {
-        pb.set_message(format!("{} {} files · {}", if p.stage == "hashing" { "Comparing" } else { "Listing" }, p.files, human(p.bytes)));
-    });
+    let r =
+        ebb_core::dupes::find_duplicates(root, min_mb * 1_000_000, &AtomicBool::new(false), |p| {
+            pb.set_message(format!(
+                "{} {} files · {}",
+                if p.stage == "hashing" {
+                    "Comparing"
+                } else {
+                    "Listing"
+                },
+                p.files,
+                human(p.bytes)
+            ));
+        });
     pb.finish_and_clear();
     r
 }
 
 fn print_dupes(groups: &[ebb_core::dupes::DupGroup]) {
-    let total: u64 = groups.iter().filter(|g| !g.optimized).map(|g| g.reclaimable).sum();
-    heading(&format!("Duplicate files  {} can be won back", style(human(total)).green().bold()));
+    let total: u64 = groups
+        .iter()
+        .filter(|g| !g.optimized)
+        .map(|g| g.reclaimable)
+        .sum();
+    heading(&format!(
+        "Duplicate files  {} can be won back",
+        style(human(total)).green().bold()
+    ));
     for g in groups.iter().take(20) {
-        let name = g.files[0].file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-        let mark = if g.optimized { style("✓ shared".to_string()).dim() } else { style(format!("+{}", human(g.reclaimable))).green() };
-        println!("   {:>10}  {} × {:<32} {}", mark, g.files.len(), name, dim(tilde(&g.files[1])));
+        let name = g.files[0]
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        let mark = if g.optimized {
+            style("✓ shared".to_string()).dim()
+        } else {
+            style(format!("+{}", human(g.reclaimable))).green()
+        };
+        println!(
+            "   {:>10}  {} × {:<32} {}",
+            mark,
+            g.files.len(),
+            name,
+            dim(tilde(&g.files[1]))
+        );
     }
     if groups.len() > 20 {
         println!("   {}", dim(format!("… {} more groups", groups.len() - 20)));
