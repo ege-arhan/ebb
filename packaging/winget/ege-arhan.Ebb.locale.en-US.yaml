@@ -1,0 +1,12 @@
+PackageIdentifier: ege-arhan.Ebb
+PackageVersion: 0.5.0
+PackageLocale: en-US
+Publisher: Ebb contributors
+PackageName: Ebb
+PackageUrl: https://github.com/ege-arhan/ebb
+License: Apache-2.0
+LicenseUrl: https://github.com/ege-arhan/ebb/blob/main/LICENSE
+ShortDescription: Open-source disk cleaner with safe cleanups, undo and an MCP server
+Tags: [disk-cleaner, storage, mcp, tauri, open-source]
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

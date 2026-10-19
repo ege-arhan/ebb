@@ -65,6 +65,8 @@ Download from the [latest release](https://github.com/ege-arhan/ebb/releases/lat
 
 The apps are **not code-signed yet**. On macOS, right-click the app → *Open* the first time (or run `xattr -dr com.apple.quarantine /Applications/Ebb.app`). On Windows, choose *More info → Run anyway* in SmartScreen.
 
+**Package managers:** `brew install --cask ege-arhan/tap/ebb` on macOS. winget manifests are in `packaging/winget` (pending submission to the community repo).
+
 ## The CLI
 
 ```bash
