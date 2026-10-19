@@ -2,10 +2,12 @@
 pub mod agents;
 pub mod catalog;
 pub mod connect;
+pub mod dupes;
 pub mod error;
 pub mod guard;
 pub mod journal;
 pub mod ops;
+pub mod optimize;
 pub mod plan;
 pub mod platform;
 pub mod scan;
