@@ -67,6 +67,8 @@ export interface Reply { text: string; tool_calls: AiToolCall[]; plan_id: string
 
 export interface TrayConfig { title: string; lines: string[] }
 
+export interface PopoverStats { disk: DiskUsage | null; memory: MemoryInfo; safe: number | null; trash: number | null; trash_items: number }
+
 export interface Api {
   homeDir(): Promise<string>;
   locations(): Promise<Location[]>;
@@ -89,6 +91,9 @@ export interface Api {
   journalItems(planId: string): Promise<EntryRow[]>;
   reveal(path: string): Promise<void>;
   diskHistory(days: number): Promise<DiskSample[]>;
+  popoverStats(): Promise<PopoverStats>;
+  openMain(screen?: string): Promise<void>;
+  quitEbb(): Promise<void>;
   trayGet(): Promise<TrayConfig>;
   traySet(config: TrayConfig): Promise<void>;
   planGet(id: string): Promise<Plan>;

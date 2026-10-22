@@ -111,11 +111,18 @@ async fn ai_storage() -> R<Vec<AiStore>> {
 #[tauri::command]
 async fn make_plan(findings: Vec<Finding>, ids: Vec<String>, paths: Vec<String>) -> R<Plan> {
     tauri::async_runtime::spawn_blocking(move || {
-        let plan = if paths.is_empty() {
-            Plan::from_findings(&findings, &Select::Ids(ids))
-        } else {
-            Plan::from_paths(&paths.into_iter().map(PathBuf::from).collect::<Vec<_>>())
-        };
+        // Katalog bulguları ve tek tek yollar tek planda birleşir (Akıllı Temizlik).
+        let a = Plan::from_findings(&findings, &Select::Ids(ids));
+        let b = Plan::from_paths(&paths.into_iter().map(PathBuf::from).collect::<Vec<_>>());
+        let mut items = a.items;
+        for i in b.items {
+            if !items.iter().any(|x| x.path == i.path) {
+                items.push(i);
+            }
+        }
+        let mut plan = Plan::new(items);
+        plan.skipped.extend(a.skipped);
+        plan.skipped.extend(b.skipped);
         Journal::open_default()
             .and_then(|j| j.save_plan(&plan))
             .map(|()| plan)
@@ -509,6 +516,38 @@ async fn ai_chat(
 }
 
 #[tauri::command]
+async fn popover_stats() -> tray::PopoverStats {
+    tauri::async_runtime::spawn_blocking(|| {
+        let mut s = tray::popover_stats();
+        if s.safe.is_none() {
+            tray::refresh_cache_now();
+            s = tray::popover_stats();
+        }
+        s
+    })
+    .await
+    .unwrap_or_else(|_| tray::popover_stats())
+}
+
+/// Açılır pencereden ana pencereyi bir ekranda açar.
+#[tauri::command]
+fn open_main(app: tauri::AppHandle, screen: Option<String>) {
+    use tauri::Emitter;
+    if let Some(p) = app.get_webview_window("popover") {
+        let _ = p.hide();
+    }
+    show_main(&app);
+    if let Some(s) = screen {
+        let _ = app.emit_to("main", "ebb://nav", s);
+    }
+}
+
+#[tauri::command]
+fn quit_ebb(app: tauri::AppHandle) {
+    app.exit(0);
+}
+
+#[tauri::command]
 fn tray_get() -> tray::TrayConfig {
     tray::load()
 }
@@ -593,6 +632,9 @@ pub fn run() {
             journal_items,
             disk_history,
             tray_get,
+            popover_stats,
+            open_main,
+            quit_ebb,
             tray_set,
             plan_get,
             apps_list,

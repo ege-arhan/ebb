@@ -1,4 +1,4 @@
-import { AppWindow, Bot, Menu as MenuIcon, PanelLeftClose, PanelLeftOpen, X, CalendarClock, Command, Gauge, Hammer, History, Layers, MessageCircle, Plug, ScanSearch, Settings as Cog, ShieldCheck, Sparkles, Trash2, Undo2, Waves } from "lucide-react";
+import { AppWindow, Bot, Zap, Menu as MenuIcon, PanelLeftClose, PanelLeftOpen, X, CalendarClock, Command, Gauge, Hammer, History, Layers, MessageCircle, Plug, ScanSearch, Settings as Cog, ShieldCheck, Sparkles, Trash2, Undo2, Waves } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Fragment, Suspense, lazy, useEffect, useMemo, useState } from "react";
 import type { Key } from "./i18n";
@@ -11,6 +11,7 @@ import { Tide } from "./screens/Tide";
 import { useApp } from "./state";
 
 // Ekranlar ihtiyaç olunca yüklenir: ilk açılış hafif kalır.
+const Smart = lazy(() => import("./screens/Smart").then((m) => ({ default: m.Smart })));
 const Agents = lazy(() => import("./screens/Agents").then((m) => ({ default: m.Agents })));
 const Apps = lazy(() => import("./screens/Apps").then((m) => ({ default: m.Apps })));
 const Assistant = lazy(() => import("./screens/Assistant").then((m) => ({ default: m.Assistant })));
@@ -24,9 +25,9 @@ const Settings = lazy(() => import("./screens/Settings").then((m) => ({ default:
 const Speed = lazy(() => import("./screens/Speed").then((m) => ({ default: m.Speed })));
 const Trash = lazy(() => import("./screens/Trash").then((m) => ({ default: m.Trash })));
 
-export type Screen = "tide" | "explore" | "clean" | "optimize" | "speed" | "apps" | "dev" | "care" | "assistant" | "agents" | "connect" | "journal" | "trash" | "settings";
+export type Screen = "tide" | "explore" | "clean" | "smart" | "optimize" | "speed" | "apps" | "dev" | "care" | "assistant" | "agents" | "connect" | "journal" | "trash" | "settings";
 const NAV = [
-  { id: "tide", icon: Waves, group: "navOverview" }, { id: "explore", icon: ScanSearch },
+  { id: "tide", icon: Waves, group: "navOverview" }, { id: "smart", icon: Zap }, { id: "explore", icon: ScanSearch },
   { id: "clean", icon: Sparkles, group: "navClean" }, { id: "optimize", icon: Layers }, { id: "apps", icon: AppWindow }, { id: "dev", icon: Hammer }, { id: "trash", icon: Trash2 },
   { id: "speed", icon: Gauge, group: "navSystem" }, { id: "care", icon: CalendarClock },
   { id: "agents", icon: Bot, group: "navAi" }, { id: "assistant", icon: MessageCircle }, { id: "connect", icon: Plug },
@@ -165,6 +166,7 @@ export default function App() {
             <motion.div key={screen} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
               <Suspense fallback={null}>
               {screen === "tide" && <Tide go={setScreen} />}
+              {screen === "smart" && <Smart />}
               {screen === "clean" && <Clean />}
               {screen === "optimize" && <Optimize />}
               {screen === "speed" && <Speed go={setScreen} />}

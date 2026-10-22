@@ -48,7 +48,7 @@ export const useApp = () => useContext(C);
 const read = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
 const write = (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* özel pencere vb. */ } };
 
-export function AppProvider({ children }: { children: ReactNode }) {
+export function AppProvider({ children, light = false }: { children: ReactNode; light?: boolean }) {
   const [lang, setLangS] = useState<Lang>(() => (new URLSearchParams(location.search).get("lang") as Lang) || (read("ebb.lang") as Lang) || (((["tr", "de", "es", "fr"] as const).find((l) => navigator.language.startsWith(l))) ?? "en"));
   const [theme, setThemeS] = useState<Theme>(() => (read("ebb.theme") as Theme) || "system");
   const [home, setHome] = useState("");
@@ -97,6 +97,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshClients = useCallback(async () => {
+    if (light) return;
     setClients(await api.connectClients().catch(() => []));
   }, []);
 
@@ -109,7 +110,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     api.aiStorage().then(setAi).catch(() => setAi([]));
   }, [lang, refreshClients]);
 
-  useEffect(() => { api.homeDir().then(setHome); void refresh(); }, [refresh]);
+  useEffect(() => { if (light) return; api.homeDir().then(setHome); void refresh(); }, [refresh, light]);
 
   // Otomatik bakım arka planda bir plan hazırlayınca haber ver.
   useEffect(() => {

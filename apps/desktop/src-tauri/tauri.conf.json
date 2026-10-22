@@ -27,7 +27,8 @@
     ],
     "security": {
       "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; connect-src ipc: http://ipc.localhost https://api.github.com"
-    }
+    },
+    "macOSPrivateApi": true
   },
   "bundle": {
     "active": true,

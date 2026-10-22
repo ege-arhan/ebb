@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::{Mutex, OnceLock};
 use tauri::{
-    AppHandle, Emitter,
+    AppHandle, Emitter, Manager, PhysicalPosition, WebviewUrl, WebviewWindowBuilder,
     menu::{Menu, MenuItem, PredefinedMenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
 };
@@ -27,6 +27,98 @@ impl Default for TrayConfig {
 
 fn path() -> PathBuf {
     ebb_core::data_dir().join("tray.json")
+}
+
+const POP_W: f64 = 372.0;
+const POP_H: f64 = 548.0;
+
+fn last_hide() -> &'static Mutex<Option<std::time::Instant>> {
+    static L: OnceLock<Mutex<Option<std::time::Instant>>> = OnceLock::new();
+    L.get_or_init(Default::default)
+}
+
+/// Açılır pencereyi (menü çubuğu simgesinin altında / görev çubuğunun üstünde) oluşturur; gizli başlar.
+pub fn ensure_popover(app: &AppHandle) {
+    if app.get_webview_window("popover").is_some() {
+        return;
+    }
+    let built =
+        WebviewWindowBuilder::new(app, "popover", WebviewUrl::App("index.html?popover".into()))
+            .title("Ebb")
+            .inner_size(POP_W, POP_H)
+            .decorations(false)
+            .transparent(true)
+            .resizable(false)
+            .always_on_top(true)
+            .skip_taskbar(true)
+            .visible(false)
+            .shadow(false)
+            .build();
+    if let Ok(w) = built {
+        let h = app.clone();
+        w.on_window_event(move |ev| {
+            // Odak kaybolunca kapan; hemen ardından simgeye basılırsa yeniden açılmasın diye zamanı not et.
+            if let tauri::WindowEvent::Focused(false) = ev {
+                if let Some(p) = h.get_webview_window("popover") {
+                    let _ = p.hide();
+                }
+                if let Ok(mut l) = last_hide().lock() {
+                    *l = Some(std::time::Instant::now());
+                }
+            }
+        });
+    }
+}
+
+/// `anchor`: simge dikdörtgeninin (x, y, genişlik, yükseklik) fiziksel piksel karşılığı.
+fn toggle_popover(app: &AppHandle, anchor: Option<(f64, f64, f64, f64)>) {
+    ensure_popover(app);
+    let Some(w) = app.get_webview_window("popover") else {
+        return;
+    };
+    if w.is_visible().unwrap_or(false) {
+        let _ = w.hide();
+        return;
+    }
+    if last_hide()
+        .lock()
+        .ok()
+        .and_then(|l| *l)
+        .is_some_and(|t| t.elapsed().as_millis() < 250)
+    {
+        return; // simgeye basmak zaten pencereyi kapattı
+    }
+    let scale = w.scale_factor().unwrap_or(1.0);
+    let (pw, ph) = (POP_W * scale, POP_H * scale);
+    let (ax, ay, aw, ah) = anchor.unwrap_or((0.0, 0.0, 0.0, 0.0));
+    let monitor = app
+        .monitor_from_point(ax, ay)
+        .ok()
+        .flatten()
+        .or_else(|| w.primary_monitor().ok().flatten());
+    let (mx, my, mw, mh) = monitor
+        .map(|m| {
+            (
+                m.position().x as f64,
+                m.position().y as f64,
+                m.size().width as f64,
+                m.size().height as f64,
+            )
+        })
+        .unwrap_or((0.0, 0.0, 1920.0, 1080.0));
+    let mut x = ax + aw / 2.0 - pw / 2.0;
+    x = x.clamp(mx + 8.0 * scale, mx + mw - pw - 8.0 * scale);
+    // Simge ekranın üst yarısındaysa (macOS menü çubuğu) altına, alt yarısındaysa (görev çubuğu) üstüne aç.
+    let y = if ay < my + mh / 2.0 {
+        ay + ah + 6.0 * scale
+    } else {
+        ay - ph - 6.0 * scale
+    };
+    let y = y.clamp(my + 8.0 * scale, my + mh - ph - 8.0 * scale);
+    let _ = w.set_position(PhysicalPosition::new(x, y));
+    let _ = w.show();
+    let _ = w.set_focus();
+    let _ = app.emit_to("popover", "ebb://popover-open", ());
 }
 
 pub fn load() -> TrayConfig {
@@ -136,6 +228,7 @@ pub fn update(app: &AppHandle) {
     let mk = |id: &str, label: &str| MenuItem::with_id(app, id, label, true, None::<&str>).ok();
     let actions: Vec<MenuItem<tauri::Wry>> = [
         mk("open", "Open Ebb"),
+        mk("smart", "Smart Clean…"),
         mk("clean", "Review cleanup…"),
         mk("trash", "Open Trash…"),
         mk("speed", "Speed up…"),
@@ -220,11 +313,11 @@ pub fn build(app: &tauri::App) -> tauri::Result<()> {
         .tooltip("Ebb")
         .menu(&menu)
         // macOS: sol tık menüyü açar (menü çubuğu alışkanlığı). Windows: sol tık pencereyi açar, sağ tık menü.
-        .show_menu_on_left_click(template)
+        .show_menu_on_left_click(false)
         .on_menu_event(|app, ev| match ev.id().as_ref() {
             "open" => super::show_main(app),
             "quit" => app.exit(0),
-            id @ ("clean" | "scan" | "connect" | "trash" | "speed") => {
+            id @ ("clean" | "scan" | "connect" | "trash" | "speed" | "smart") => {
                 super::show_main(app);
                 let _ = app.emit("ebb://nav", id);
             }
@@ -234,14 +327,24 @@ pub fn build(app: &tauri::App) -> tauri::Result<()> {
             if let TrayIconEvent::Click {
                 button: MouseButton::Left,
                 button_state: MouseButtonState::Up,
+                rect,
                 ..
             } = ev
-                && !cfg!(target_os = "macos")
             {
-                super::show_main(tray.app_handle());
+                let scale = tray
+                    .app_handle()
+                    .get_webview_window("popover")
+                    .and_then(|w| w.scale_factor().ok())
+                    .unwrap_or(1.0);
+                let (p, s) = (
+                    rect.position.to_physical::<f64>(scale),
+                    rect.size.to_physical::<f64>(scale),
+                );
+                toggle_popover(tray.app_handle(), Some((p.x, p.y, s.width, s.height)));
             }
         })
         .build(app)?;
+    ensure_popover(app.handle());
 
     std::thread::spawn(move || {
         let mut tick = 0u32;
@@ -280,4 +383,29 @@ pub fn build(app: &tauri::App) -> tauri::Result<()> {
         }
     });
     Ok(())
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct PopoverStats {
+    pub disk: Option<ops::DiskUsage>,
+    pub memory: system::MemoryInfo,
+    pub safe: Option<u64>,
+    pub trash: Option<u64>,
+    pub trash_items: usize,
+}
+
+/// Açılır pencere için hafif veri: disk ve bellek canlı, pahalı olanlar arka plan önbelleğinden.
+pub fn popover_stats() -> PopoverStats {
+    let c = cache().lock().map(|c| c.clone()).unwrap_or_default();
+    PopoverStats {
+        disk: ops::disk_usage(),
+        memory: system::memory(),
+        safe: c.safe,
+        trash: c.trash.map(|t| t.0),
+        trash_items: c.trash.map_or(0, |t| t.1),
+    }
+}
+
+pub fn refresh_cache_now() {
+    refresh_slow();
 }
