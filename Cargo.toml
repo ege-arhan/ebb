@@ -17,6 +17,7 @@ thiserror = "2"
 jwalk = "0.8"
 rusqlite = { version = "0.37", features = ["bundled"] }
 blake3 = "1"
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
 trash = "5"
 dirs = "6"
 clap = { version = "4", features = ["derive"] }
