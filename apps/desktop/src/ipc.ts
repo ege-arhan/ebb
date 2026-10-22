@@ -59,6 +59,8 @@ const real: Api = {
     return invoke("find_duplicates", { root, onProgress: ch });
   },
   optimizeClones: (groups) => invoke("optimize_clones", { groups }),
+  hiddenList: () => invoke("hidden_list"),
+  hiddenRun: (id) => invoke("hidden_run", { id }),
   compressAnalyze: (path) => invoke("compress_analyze", { path }),
   compressSmart: (path, minRatio) => invoke("compress_smart", { path, minRatio }),
   aiAskAll: (targets, history, message) => invoke("ai_ask_all", { targets, history, message }),

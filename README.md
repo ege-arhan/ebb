@@ -39,6 +39,9 @@
 - **AI-native, but safe.** `ebb connect` wires Claude Code, Codex, Claude Desktop, LM Studio, Cursor, VS Code, Windsurf and Gemini CLI to a local MCP server in one step. Assistants can scan, explain and *plan*. They cannot delete, move or restore anything.
 - **Knows what AI tools keep on disk.** Claude Code, Codex, Cursor, Ollama, LM Studio, Hugging Face caches and more.
 - **Fast.** A 2-million-file home folder scans in ~16 s (3x faster than `du` on the same machine).
+- **Smart Clean.** One screen finds every kind of reclaimable space (safe caches, old installers, idle project build folders, Trash) and shows a single plan you approve.
+- **Type-aware compression.** Analyzes a folder by file type, estimates the real saving by sampling and compresses only what is worth it (skips PDFs, photos, video, archives).
+- **Claude Code + Codex + local models, together.** The assistant can drive your installed `claude` and `codex` CLIs (read-only, plan-only) and compare their answers with a local model.
 - **Space back, nothing deleted.** Duplicate copies become copy-on-write clones that share disk blocks (APFS, Btrfs, XFS), like Mint's Optimize. Folders you rarely open can be compressed in place (APFS, NTFS) and decompressed any time.
 - **Finds the big stuff anywhere.** Large files you haven't opened in months, old installers in Downloads, plus 60+ cache recipes for browsers, dev tools, creative apps and the system.
 - **Honest speed-up.** A health score with plain tips, memory pressure, the heaviest apps (quit them like Cmd+Q), and the items that start with your computer (turn them off and on). No fake RAM boosters.
@@ -77,7 +80,7 @@ ebb why ~              # what grew since last time
 ebb agents             # AI tools and local models on disk
 ebb optimize           # win space back without deleting (clones duplicate copies)
 ebb dupes ~/Downloads  # duplicate files
-ebb compress ~/Archive # compress a folder in place (--undo to reverse)
+ebb compress ~/Archive # type-aware compression (--analyze, --all, --undo)
 ebb big                # large forgotten files and old installers
 ebb system             # health score, memory, heavy apps, tips
 ebb apps --quit Slack  # quit an app gracefully
@@ -120,7 +123,7 @@ ebb connect --remove cursor
 
 `ebb connect` edits each client's own config atomically, keeps the first backup (`*.ebb-backup`), refuses symlinked or non-JSON configs, never overwrites a server called `ebb` it did not create, and finishes with a real self-test of the MCP server. The desktop app has the same flow on the **Connect AI** screen.
 
-MCP tools: `ebb_scan`, `ebb_top`, `ebb_why`, `ebb_explain_path`, `ebb_findings`, `ebb_agents_storage`, `ebb_duplicates`, `ebb_large_old_files`, `ebb_system_health`, `ebb_apps`, `ebb_uninstall_preview`, `ebb_project_artifacts`, `ebb_plan_cleanup`, `ebb_plan_status`. There is deliberately **no apply and no undo tool**: anything that moves files needs a human (`ebb apply --yes`, `ebb undo`, or the app).
+MCP tools: `ebb_scan`, `ebb_top`, `ebb_why`, `ebb_explain_path`, `ebb_findings`, `ebb_agents_storage`, `ebb_duplicates`, `ebb_large_old_files`, `ebb_system_health`, `ebb_folder_types`, `ebb_apps`, `ebb_uninstall_preview`, `ebb_project_artifacts`, `ebb_plan_cleanup`, `ebb_plan_status`. There is deliberately **no apply and no undo tool**: anything that moves files needs a human (`ebb apply --yes`, `ebb undo`, or the app).
 
 ## Build from source
 

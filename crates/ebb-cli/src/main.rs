@@ -158,6 +158,12 @@ enum Cmd {
         /** Undo compression */
         #[arg(long)]
         undo: bool,
+        /// Compress every file, even ones that are already compressed (default: only what is worth it)
+        #[arg(long)]
+        all: bool,
+        /// Only show the per-type analysis, change nothing
+        #[arg(long)]
+        analyze: bool,
         #[arg(long)]
         yes: bool,
         #[arg(long)]
@@ -1184,9 +1190,60 @@ fn run() -> ebb_core::Result<()> {
         Cmd::Compress {
             path,
             undo,
+            all,
+            analyze,
             yes,
             json,
         } => {
+            if !undo && !all {
+                // Akıllı yol: önce dosya türlerine göre çözümle, yalnızca değecek olanları sıkıştır.
+                let pb = spinner("Looking at your files");
+                let a = ebb_core::compress::analyze(&path, &AtomicBool::new(false))?;
+                pb.finish_and_clear();
+                if analyze {
+                    emit(json, &a, || print_analysis(&a));
+                    return Ok(());
+                }
+                if !json {
+                    print_analysis(&a);
+                }
+                if !a.supported || a.est_saved == 0 {
+                    println!("  Nothing worth compressing here.\n");
+                    return Ok(());
+                }
+                let go = yes
+                    || json
+                    || !ui::tty()
+                    || Confirm::with_theme(&ColorfulTheme::default())
+                        .with_prompt(format!(
+                            "Compress the worthwhile files (about {} saved)?",
+                            human(a.est_saved)
+                        ))
+                        .default(true)
+                        .interact()
+                        .unwrap_or(false);
+                if !go {
+                    return Ok(());
+                }
+                let pb = spinner("Compressing what is worth it");
+                let r = ebb_core::compress::compress_smart(&path, 0.1, &AtomicBool::new(false))?;
+                pb.finish_and_clear();
+                emit(json, &r, || {
+                    println!(
+                        "\n  {} {}  {} → {}  ·  {} saved  ·  {} files compressed, {} skipped\n",
+                        style("✓").green().bold(),
+                        tilde(&r.path),
+                        human(r.before),
+                        human(r.after),
+                        style(human(r.before.saturating_sub(r.after)))
+                            .green()
+                            .bold(),
+                        r.compressed_files,
+                        r.skipped_files
+                    );
+                });
+                return Ok(());
+            }
             let go = yes
                 || json
                 || !ui::tty()
@@ -1721,6 +1778,36 @@ fn run() -> ebb_core::Result<()> {
         Cmd::Mcp => ebb_mcp::serve_stdio()?,
     }
     Ok(())
+}
+
+fn print_analysis(a: &ebb_core::compress::CompressAnalysis) {
+    heading(&format!("Compression analysis  {}", dim(&a.method)));
+    let max = a.types.iter().map(|t| t.bytes).max().unwrap_or(1) as f64;
+    for t in &a.types {
+        let mark = if t.worthwhile {
+            style(format!("−{}", human(t.est_saved)))
+                .green()
+                .to_string()
+        } else {
+            dim("skip").to_string()
+        };
+        println!(
+            "   {:>10}  {:<12} {}  {:>9}  {}",
+            mark,
+            t.category,
+            bar(t.bytes as f64 / max, 10, &ui::teal()),
+            human(t.bytes),
+            dim(if t.worthwhile {
+                String::new()
+            } else {
+                t.reason.clone()
+            })
+        );
+    }
+    println!(
+        "\n  {} can be saved\n",
+        style(human(a.est_saved)).green().bold()
+    );
 }
 
 fn find_dupes(

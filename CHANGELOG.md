@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0
+- **Menu bar / tray popover:** clicking the icon opens a polished mini screen (free-space wave, safe-to-clean, Trash, memory, one-tap Smart Clean, quick actions) instead of a plain menu. Right-click still shows the menu. Works on macOS, Windows and Linux.
+- **Smart Clean:** one screen that looks for every kind of reclaimable space at once (safe caches, old installers, idle project build folders, the Trash), shows one combined plan, and moves nothing until you approve.
+- **Type-aware compression:** Ebb analyzes a folder by file type (by magic bytes, not just extension), estimates the real saving by sampling, and compresses only the files worth it, skipping already-compressed PDFs, photos, video and archives. `ebb compress <folder>` is smart by default (`--analyze`, `--all`).
+- **Claude Code and Codex inside Ebb:** the Assistant can drive your installed `claude` and `codex` CLIs (read-only sandbox, Ebb's read/plan-only tools only) next to local models, and ask several at once to compare answers.
+- **Hidden space:** Time Machine local snapshots (macOS) and Linux package/journal caches with the exact command shown.
+- New read-only MCP tool `ebb_folder_types`; 15 tools.
+
 ## 0.5.3
 - **Compression cleanup fixed:** folders containing files flagged immutable (`uchg`, common in some git/backup trees) no longer leave a hidden `.name.ebb-compress.N` copy behind. Ebb now double-checks the new copy contains everything before deleting the old one, and keeps the old one (and says where) if it doesn't.
 - Clear message when a folder barely shrinks (already-compressed PDFs, photos, videos, archives).

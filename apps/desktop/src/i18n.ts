@@ -69,6 +69,7 @@ const en = {
   typ_text: "Text", typ_code: "Code", typ_documents: "Documents", typ_data: "Data", typ_binaries: "Programs", typ_images: "Images", typ_audio: "Audio", typ_video: "Video", typ_archives: "Archives", typ_disk_images: "Disk images", typ_other: "Other",
   estSave: "can save about", methodLabel: "Method", compressedFiles: "{n} files compressed",
   askAll: "Ask all selected", compareHint: "Select several assistants to compare their answers.", compareTitle: "Answers", slow: "took", usingProviders: "Assistants",
+  hiddenTitle: "Hidden space", hiddenBody: "Space your computer holds on to that Finder doesn't show, like local backups. Each item shows the exact command it runs.", hiddenNone: "Nothing hidden to free on this system.", hiddenNeedAdmin: "Needs administrator rights. Run the command yourself in a terminal.",
   // tide
   tideLead: "Your disk as a tide: the water is what you use, the pale band is what Ebb can safely let go.",
   basinHint: "Water level is used space. The pale band is the safe part that can recede.",
@@ -201,6 +202,7 @@ const tr: Record<Key, string> = {
   typ_text: "Metin", typ_code: "Kod", typ_documents: "Belgeler", typ_data: "Veri", typ_binaries: "Programlar", typ_images: "Görseller", typ_audio: "Ses", typ_video: "Video", typ_archives: "Arşivler", typ_disk_images: "Disk imajları", typ_other: "Diğer",
   estSave: "yaklaşık kazanç", methodLabel: "Yöntem", compressedFiles: "{n} dosya sıkıştırıldı",
   askAll: "Seçilenlere sor", compareHint: "Yanıtlarını karşılaştırmak için birkaç asistan seç.", compareTitle: "Yanıtlar", slow: "sürdü", usingProviders: "Asistanlar",
+  hiddenTitle: "Gizli alan", hiddenBody: "Bilgisayarının tuttuğu ama Finder'da görünmeyen alan, örneğin yerel yedekler. Her öğe çalıştıracağı komutu aynen gösterir.", hiddenNone: "Bu sistemde boşaltılacak gizli bir şey yok.", hiddenNeedAdmin: "Yönetici yetkisi gerekir. Komutu terminalde kendin çalıştır.",
   tide: "Gelgit", explore: "Keşfet", clean: "Temizle", agents: "AI depolama", connect: "AI'a bağla", journal: "Günlük", settings: "Ayarlar",
   free: "boş", of: "/", used: "dolu", canEbb: "çekilebilir", open: "Aç", back: "Geri", cancel: "Vazgeç", copy: "Kopyala", copied: "Kopyalandı",
   files: "dosya", loading: "Etrafa bakılıyor", reveal: "Klasörde göster", size: "Boyut", path: "Yol", search: "Ara", all: "Tümü",

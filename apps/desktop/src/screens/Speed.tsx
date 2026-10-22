@@ -1,4 +1,4 @@
-import { Activity, AlertTriangle, CheckCircle2, Cpu, Info, Loader2, Power, Rocket, XCircle } from "lucide-react";
+import { Activity, AlertTriangle, CheckCircle2, Cpu, HardDrive, Info, Loader2, Power, Rocket, XCircle } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import type { Screen } from "../App";
@@ -7,7 +7,7 @@ import { Modal } from "../components/Overlay";
 import { human } from "../format";
 import { api } from "../ipc";
 import { useApp } from "../state";
-import type { AppUsage, Health, StartupItem, Tip } from "../types";
+import type { AppUsage, Health, HiddenItem, StartupItem, Tip } from "../types";
 
 const SEV = { good: CheckCircle2, info: Info, warn: AlertTriangle, bad: XCircle } as const;
 
@@ -33,10 +33,13 @@ export function Speed({ go }: { go(s: Screen): void }) {
   const [startup, setStartup] = useState<StartupItem[] | null>(null);
   const [confirm, setConfirm] = useState<AppUsage | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [hidden, setHidden] = useState<HiddenItem[] | null>(null);
+  const { celebrateWith } = useApp();
 
   useEffect(() => {
     api.health().then(setHealth).catch(() => {});
     api.startupItems().then(setStartup).catch(() => setStartup([]));
+    api.hiddenList().then(setHidden).catch(() => setHidden([]));
     const load = () => { if (!document.hidden) api.topApps().then(setApps).catch(() => setApps([])); };
     load();
     // Yalnızca bu ekran açıkken ve pencere görünürken yenilenir: arka planda yük yok.
@@ -131,6 +134,25 @@ export function Speed({ go }: { go(s: Screen): void }) {
           ))}
         </ul>
       </section>
+
+      {hidden && hidden.length > 0 && (
+        <section className="panel" id="hidden">
+          <div className="feat-head"><span className="feat-ico amber"><HardDrive size={18} aria-hidden /></span><div><h2>{t("hiddenTitle")}</h2><p className="muted">{t("hiddenBody")}</p></div></div>
+          <ul className="rows">
+            {hidden.map((h) => (
+              <li key={h.id}>
+                <span className="rowtext"><b>{h.label}</b><small className="wrapsmall">{h.description}</small><small className="mono">{h.command}</small></span>
+                <span className="mono">{h.estimate ? human(h.estimate) : ""}</span>
+                <button className="btn" disabled={!h.available || busy === h.id} title={h.needs_admin && !h.available ? t("hiddenNeedAdmin") : ""} onClick={async () => {
+                  setBusy(h.id);
+                  try { const r = await api.hiddenRun(h.id); const f = Math.max(0, r.after - r.before); if (f > 0) celebrateWith(f, "freed"); else toast(r.output.slice(0, 120) || t("cleanupDone")); setHidden(await api.hiddenList()); } catch (e) { toast(String(e)); }
+                  setBusy(null);
+                }}>{busy === h.id ? <Loader2 size={14} className="spin" aria-hidden /> : <Rocket size={14} aria-hidden />} {t("runCleanup")}</button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <Modal open={!!confirm} onClose={() => setConfirm(null)} title={t("quit")}>
         {confirm && (

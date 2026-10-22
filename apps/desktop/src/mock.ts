@@ -265,6 +265,8 @@ export const mockApi: Api = {
     groups.forEach((g) => { const d = dupes.find((x) => x.hash === g.hash); if (d) { d.optimized = true; d.reclaimable = 0; } });
     return { files: groups.reduce((a, g) => a + g.files.length - 1, 0), saved, skipped: [] };
   },
+  hiddenList: async () => [{ id: "tm-snapshots", label: "Time Machine local snapshots", description: "6 local snapshots hold deleted files macOS can free when needed. Thinning removes the oldest ones.", command: "tmutil thinlocalsnapshots / 50000000000 4", estimate: 18 * GB, available: true, needs_admin: false, safety: "review" as const }],
+  async hiddenRun(id) { await wait(1500); used -= 18 * GB; return { id, ok: true, output: "thinned", before: total - used - 18 * GB, after: total - used }; },
   async compressAnalyze(path) {
     await wait(900);
     const types = [

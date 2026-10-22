@@ -29,7 +29,7 @@ fn connect_writes_preserves_and_removes() {
 
     let (ok, out) = ebb(h.path(), &["connect", "cursor"]);
     assert!(ok, "{out}");
-    assert!(out.contains("answers with 14 tools"), "{out}");
+    assert!(out.contains("answers with 15 tools"), "{out}");
     let v: serde_json::Value = serde_json::from_str(&fs::read_to_string(&cfg).unwrap()).unwrap();
     assert_eq!(
         v["mcpServers"]["other"]["command"], "x",

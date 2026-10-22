@@ -29,6 +29,7 @@ fn tools() -> Value {
         {"name":"ebb_apps","description":"Installed apps by size, with last-used age. Read-only.","inputSchema":{"type":"object","properties":{}}},
         {"name":"ebb_uninstall_preview","description":"What uninstalling an app would remove (the app plus leftovers). Read-only; a human applies a plan.","inputSchema":{"type":"object","properties":{"name":{"type":"string"}},"required":["name"]}},
         {"name":"ebb_project_artifacts","description":"Rebuildable artifacts (node_modules, target, venv…) in idle projects. Read-only.","inputSchema":{"type":"object","properties":{"idle_days":{"type":"integer","default":30}}}},
+        {"name":"ebb_folder_types","description":"Per-file-type estimate of what compressing a folder would save (read-only; a human runs the compression).","inputSchema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"]}},
         {"name":"ebb_plan_status","description":"Status of a plan, or the recent plans when plan_id is omitted.","inputSchema":{"type":"object","properties":{"plan_id":{"type":"string"}}}},
     ])
 }
@@ -202,6 +203,14 @@ fn call(name: &str, a: &Value) -> Result<Value, String> {
             )
             .map_err(e)?;
             Ok(json!(r.into_iter().take(40).collect::<Vec<_>>()))
+        }
+        "ebb_folder_types" => {
+            let r = ebb_core::compress::analyze(
+                &arg_path(a)?,
+                &std::sync::atomic::AtomicBool::new(false),
+            )
+            .map_err(e)?;
+            serde_json::to_value(r).map_err(|x| x.to_string())
         }
         _ => Err(format!("unknown tool: {name}")),
     }

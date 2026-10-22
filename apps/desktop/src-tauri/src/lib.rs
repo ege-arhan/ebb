@@ -212,6 +212,21 @@ async fn optimize_clones(
 }
 
 #[tauri::command]
+async fn hidden_list() -> Vec<ebb_core::snaps::HiddenItem> {
+    tauri::async_runtime::spawn_blocking(ebb_core::snaps::list)
+        .await
+        .unwrap_or_default()
+}
+
+#[tauri::command]
+async fn hidden_run(id: String) -> R<ebb_core::snaps::HiddenResult> {
+    tauri::async_runtime::spawn_blocking(move || ebb_core::snaps::run(&id))
+        .await
+        .map_err(err)?
+        .map_err(err)
+}
+
+#[tauri::command]
 async fn compress_analyze(
     path: String,
     state: State<'_, AppState>,
@@ -707,6 +722,8 @@ pub fn run() {
             optimize_clones,
             compress,
             compress_analyze,
+            hidden_list,
+            hidden_run,
             compress_smart,
             ai_ask_all,
             decompress,

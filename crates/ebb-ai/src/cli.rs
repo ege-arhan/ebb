@@ -13,6 +13,7 @@ pub const CODEX_TIMEOUT: Duration = Duration::from_secs(120);
 /// Claude'a verilen tek izin listesi: Ebb MCP'nin salt-okunur/plan araçları (apply/undo yok).
 pub const ALLOWED_TOOLS: &[&str] = &[
     "mcp__ebb__ebb_scan",
+    "mcp__ebb__ebb_folder_types",
     "mcp__ebb__ebb_top",
     "mcp__ebb__ebb_why",
     "mcp__ebb__ebb_explain_path",
@@ -321,7 +322,7 @@ mod tests {
                 assert!(!n.contains(bad), "{n}");
             }
         }
-        assert_eq!(ALLOWED_TOOLS.len(), 14);
+        assert_eq!(ALLOWED_TOOLS.len(), 15);
     }
 
     #[test]

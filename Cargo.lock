@@ -1128,7 +1128,7 @@ checksum = "d0881ea181b1df73ff77ffaaf9c7544ecc11e82fba9b5f27b262a3c73a332555"
 
 [[package]]
 name = "ebb-ai"
-version = "0.5.3"
+version = "0.6.0"
 dependencies = [
  "ebb-core",
  "serde",
@@ -1139,7 +1139,7 @@ dependencies = [
 
 [[package]]
 name = "ebb-cli"
-version = "0.5.3"
+version = "0.6.0"
 dependencies = [
  "clap",
  "clap_complete",
@@ -1157,7 +1157,7 @@ dependencies = [
 
 [[package]]
 name = "ebb-core"
-version = "0.5.3"
+version = "0.6.0"
 dependencies = [
  "blake3",
  "dirs 6.0.0",
@@ -1177,7 +1177,7 @@ dependencies = [
 
 [[package]]
 name = "ebb-desktop"
-version = "0.5.3"
+version = "0.6.0"
 dependencies = [
  "dirs 6.0.0",
  "ebb-ai",
@@ -1195,7 +1195,7 @@ dependencies = [
 
 [[package]]
 name = "ebb-mcp"
-version = "0.5.3"
+version = "0.6.0"
 dependencies = [
  "ebb-core",
  "serde",

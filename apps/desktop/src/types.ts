@@ -74,6 +74,9 @@ export interface CompressAnalysis { path: string; total: number; est_saved: numb
 export interface SmartReport { path: string; before: number; after: number; compressed_files: number; skipped_files: number; skipped_bytes: number }
 export interface Opinion { provider: string; model: string; text: string; error: string | null; elapsed_ms: number }
 
+export interface HiddenItem { id: string; label: string; description: string; command: string; estimate: number | null; available: boolean; needs_admin: boolean; safety: "safe" | "review" }
+export interface HiddenResult { id: string; ok: boolean; output: string; before: number; after: number }
+
 export interface Api {
   homeDir(): Promise<string>;
   locations(): Promise<Location[]>;
@@ -121,6 +124,8 @@ export interface Api {
   openRelease(url: string): Promise<void>;
   findDuplicates(root: string | null, onProgress: (p: DupProgress) => void): Promise<{ groups: DupGroup[]; cloneSupported: boolean }>;
   optimizeClones(groups: DupGroup[]): Promise<OptimizeReport>;
+  hiddenList(): Promise<HiddenItem[]>;
+  hiddenRun(id: string): Promise<HiddenResult>;
   compressAnalyze(path: string): Promise<CompressAnalysis>;
   compressSmart(path: string, minRatio: number): Promise<SmartReport>;
   aiAskAll(targets: [Provider, string][], history: ChatMessage[], message: string): Promise<Opinion[]>;
