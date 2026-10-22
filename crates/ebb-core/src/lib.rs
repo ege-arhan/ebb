@@ -18,6 +18,7 @@ pub mod platform;
 pub mod projects;
 pub mod prune;
 pub mod scan;
+pub mod snaps;
 pub mod snapshot;
 pub mod system;
 pub mod trashbin;
