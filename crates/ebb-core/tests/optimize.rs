@@ -215,3 +215,40 @@ mod mac {
         assert!(optimize::compress(&p.join("link")).is_err());
     }
 }
+
+/// uchg bayraklı dosya içeren klasör sıkıştırılınca eski kopya temizlenmeli (eskiden "could not be removed").
+#[cfg(target_os = "macos")]
+#[test]
+fn compress_cleans_up_when_files_are_flagged_immutable() {
+    let d = tempfile::tempdir().unwrap();
+    let dir = d.path().join("proj");
+    fs::create_dir_all(dir.join("objects/ab")).unwrap();
+    let obj = dir.join("objects/ab/cdef");
+    fs::write(&obj, "x".repeat(50_000)).unwrap();
+    fs::write(dir.join("notes.txt"), "hello world ".repeat(20_000)).unwrap();
+    assert!(
+        std::process::Command::new("chflags")
+            .args(["uchg"])
+            .arg(&obj)
+            .status()
+            .unwrap()
+            .success()
+    );
+    let r = ebb_core::optimize::compress(&dir);
+    let leftovers: Vec<_> = fs::read_dir(d.path())
+        .unwrap()
+        .flatten()
+        .filter(|e| e.file_name().to_string_lossy().contains("ebb-compress"))
+        .collect();
+    let _ = std::process::Command::new("chflags")
+        .args(["-R", "nouchg"])
+        .arg(d.path())
+        .status();
+    let r = r.expect("compress must succeed");
+    assert!(leftovers.is_empty(), "old copy left behind: {leftovers:?}");
+    assert!(r.after < r.before, "text should compress: {r:?}");
+    assert_eq!(
+        fs::read_to_string(dir.join("notes.txt")).unwrap(),
+        "hello world ".repeat(20_000)
+    );
+}

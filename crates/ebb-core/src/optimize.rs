@@ -409,11 +409,33 @@ fn run_compression(path: &Path, _: &Metadata, on: bool) -> Result<()> {
         Ok(())
     })();
     // Takas olduysa tmp'de eski kopya, olmadıysa yarım kopya var; ikisi de bizim.
-    let cleanup = if fs::symlink_metadata(&tmp).is_ok_and(|m| m.is_dir()) {
-        fs::remove_dir_all(&tmp)
-    } else {
-        fs::remove_file(&tmp)
+    // Takas sonrası eski kopyada yeni kopyada olmayan bir şey kaldıysa (doğrulama ile takas arasında
+    // eklenen dosya) eski kopya silinmez; kullanıcıya yeri söylenir.
+    if res.is_ok() {
+        let (old, new) = (tally(&tmp), tally(path));
+        if old.is_none() || new.is_none_or(|n| old.is_some_and(|o| o.0 > n.0 || o.1 > n.1)) {
+            return Err(Error::Guard(format!(
+                "compressed, but the old copy at {} differs from the new one, so it was kept. Check it, then delete it yourself",
+                tmp.display()
+            )));
+        }
+    }
+    let remove = |p: &Path| {
+        if fs::symlink_metadata(p).is_ok_and(|m| m.is_dir()) {
+            fs::remove_dir_all(p)
+        } else {
+            fs::remove_file(p)
+        }
     };
+    let mut cleanup = remove(&tmp);
+    if cleanup.is_err() {
+        // Değiştirilemez (uchg/schg) bayraklı dosyalar silmeyi engeller; bayraklar yalnızca bu geçici kopyadan kaldırılır.
+        let _ = std::process::Command::new("/usr/bin/chflags")
+            .args(["-R", "nouchg,noschg"])
+            .arg(&tmp)
+            .output();
+        cleanup = remove(&tmp);
+    }
     res?;
     cleanup.map_err(|e| {
         Error::Io(io::Error::other(format!(

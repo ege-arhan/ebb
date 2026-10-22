@@ -1223,6 +1223,12 @@ fn run() -> ebb_core::Result<()> {
                         String::new()
                     }
                 );
+                if !undo && r.before > 0 && (saved as f64 / r.before as f64) < 0.05 {
+                    hint(
+                        "Under 5% smaller: this folder is mostly already-compressed files (PDFs, photos, videos, archives). Documents, code and text compress best.",
+                    );
+                    println!();
+                }
             });
         }
         Cmd::Big {

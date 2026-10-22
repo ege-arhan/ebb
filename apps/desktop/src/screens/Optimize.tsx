@@ -61,7 +61,9 @@ export function Optimize() {
     setBusy(undo ? "decompress" : "compress");
     try {
       const r = undo ? await api.decompress(path) : await api.compress(path);
-      if (!undo && r.before > r.after) celebrateWith(r.before - r.after, "compress");
+      const pct = r.before ? ((r.before - r.after) / r.before) * 100 : 0;
+      if (!undo && pct >= 5) celebrateWith(r.before - r.after, "compress");
+      else if (!undo) toast(t("compressLow").replace("{pct}", pct.toFixed(1)));
       setCmp(undo ? null : r);
       void refresh();
     } catch (e) { toast(String(e)); }

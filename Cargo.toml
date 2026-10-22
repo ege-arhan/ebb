@@ -3,7 +3,7 @@ resolver = "3"
 members = ["crates/ebb-core", "crates/ebb-cli", "crates/ebb-mcp", "crates/ebb-ai", "apps/desktop/src-tauri"]
 
 [workspace.package]
-version = "0.5.2"
+version = "0.5.3"
 edition = "2024"
 license = "Apache-2.0"
 repository = "https://github.com/ege-arhan/ebb"

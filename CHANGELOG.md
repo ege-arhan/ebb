@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.3
+- **Compression cleanup fixed:** folders containing files flagged immutable (`uchg`, common in some git/backup trees) no longer leave a hidden `.name.ebb-compress.N` copy behind. Ebb now double-checks the new copy contains everything before deleting the old one, and keeps the old one (and says where) if it doesn't.
+- Clear message when a folder barely shrinks (already-compressed PDFs, photos, videos, archives).
+
 ## 0.5.2
 - The update button installs the new version in place (signed updater) and restarts Ebb; falls back to the download page if that fails.
 

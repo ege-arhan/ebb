@@ -58,6 +58,7 @@ const en = {
   tr_free: "Free space", tr_safe: "Safe to clean", tr_memory: "Memory", tr_trash: "Trash size", tr_health: "Health score", trayNote: "On Windows and Linux the value appears in the icon's tooltip.",
   menuToggle: "Menu", menuClose: "Close menu",
   updating: "Updating Ebb…", updateFailed: "Could not update in place. Opening the download page instead.", updateReady: "Updated. Restarting…",
+  compressLow: "Only {pct}% smaller. This folder is mostly files that are already compressed (PDFs, photos, videos, archives), so there is little to gain. Folders with documents, code and text compress best.",
   // tide
   tideLead: "Your disk as a tide: the water is what you use, the pale band is what Ebb can safely let go.",
   basinHint: "Water level is used space. The pale band is the safe part that can recede.",
@@ -179,6 +180,7 @@ const tr: Record<Key, string> = {
   tr_free: "Boş alan", tr_safe: "Temizlenebilir", tr_memory: "Bellek", tr_trash: "Çöp Kutusu boyutu", tr_health: "Sağlık puanı", trayNote: "Windows ve Linux'ta değer, simgenin üzerine gelince ipucunda görünür.",
   menuToggle: "Menü", menuClose: "Menüyü kapat",
   updating: "Ebb güncelleniyor…", updateFailed: "Yerinde güncellenemedi. Bunun yerine indirme sayfası açılıyor.", updateReady: "Güncellendi. Yeniden başlatılıyor…",
+  compressLow: "Yalnızca %{pct} küçüldü. Bu klasör çoğunlukla zaten sıkışık dosyalardan (PDF, fotoğraf, video, arşiv) oluşuyor, kazanılacak az şey var. Belge, kod ve metin içeren klasörler en iyi sıkışır.",
   tide: "Gelgit", explore: "Keşfet", clean: "Temizle", agents: "AI depolama", connect: "AI'a bağla", journal: "Günlük", settings: "Ayarlar",
   free: "boş", of: "/", used: "dolu", canEbb: "çekilebilir", open: "Aç", back: "Geri", cancel: "Vazgeç", copy: "Kopyala", copied: "Kopyalandı",
   files: "dosya", loading: "Etrafa bakılıyor", reveal: "Klasörde göster", size: "Boyut", path: "Yol", search: "Ara", all: "Tümü",
