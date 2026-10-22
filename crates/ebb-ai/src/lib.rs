@@ -1,5 +1,6 @@
 //! Yerel-öncelikli AI yardımcısı: Ollama / LM Studio ile sohbet; model yalnızca Ebb'in
 //! salt-okunur araçlarını görür ve plan hazırlayabilir. Uygulama/silme yoktur.
+mod cli;
 mod tools;
 
 use serde::{Deserialize, Serialize};
@@ -10,7 +11,7 @@ pub use tools::{run_tool, tools_schema};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Provider {
-    /// "ollama" | "lmstudio"
+    /// "ollama" | "lmstudio" | "claude-cli" | "codex-cli" (CLI için base_url = mutlak CLI yolu)
     pub id: String,
     pub name: String,
     pub base_url: String,
@@ -103,7 +104,23 @@ fn probe(
 
 /// Yerel sağlayıcıları dener (400 ms); asla hata vermez.
 pub fn detect() -> Vec<Provider> {
+    // CLI'ler yalnızca bulunur, asla çalıştırılmaz (ağ/model maliyeti yok).
+    let cli = |id: &str, name: &str, bin: &str| {
+        let found = ebb_core::connect::find_cli(bin);
+        Provider {
+            id: id.into(),
+            name: name.into(),
+            base_url: found
+                .as_ref()
+                .map(|p| p.to_string_lossy().into_owned())
+                .unwrap_or_default(),
+            models: vec!["default".into()],
+            online: found.is_some(),
+        }
+    };
     vec![
+        cli("claude-cli", "Claude Code", "claude"),
+        cli("codex-cli", "Codex", "codex"),
         probe(
             "ollama",
             "Ollama",
@@ -137,6 +154,80 @@ fn preview(s: &str) -> String {
 
 /// Bir kullanıcı turu: model -> araç çağrıları -> sonuçlar -> model (en çok 6 adım).
 pub fn chat(
+    provider: &Provider,
+    model: &str,
+    history: &[ChatMessage],
+    user: &str,
+) -> ebb_core::Result<Reply> {
+    match provider.id.as_str() {
+        "claude-cli" => {
+            let bin = std::path::Path::new(&provider.base_url);
+            return cli::claude_chat(
+                bin,
+                &cli::ebb_path()?,
+                model,
+                history,
+                user,
+                cli::CLAUDE_TIMEOUT,
+            );
+        }
+        "codex-cli" => {
+            let bin = std::path::Path::new(&provider.base_url);
+            return cli::codex_chat(
+                bin,
+                &cli::ebb_path()?,
+                model,
+                history,
+                user,
+                cli::CODEX_TIMEOUT,
+            );
+        }
+        _ => {}
+    }
+    chat_http(provider, model, history, user)
+}
+
+/// Birden çok sağlayıcıya aynı soruyu sorar (paralel); sıra korunur.
+#[derive(Serialize, Debug)]
+pub struct Opinion {
+    pub provider: String,
+    pub model: String,
+    pub text: String,
+    pub error: Option<String>,
+    pub elapsed_ms: u64,
+}
+
+pub fn ask_all(
+    providers: &[(Provider, String)],
+    history: &[ChatMessage],
+    user: &str,
+) -> Vec<Opinion> {
+    std::thread::scope(|s| {
+        let hs: Vec<_> = providers
+            .iter()
+            .map(|(p, model)| {
+                s.spawn(move || {
+                    let t = std::time::Instant::now();
+                    let r = chat(p, model, history, user);
+                    let (text, error) = match r {
+                        Ok(r) => (r.text, None),
+                        Err(e) => (String::new(), Some(e.to_string())),
+                    };
+                    Opinion {
+                        provider: p.id.clone(),
+                        model: model.clone(),
+                        text,
+                        error,
+                        elapsed_ms: t.elapsed().as_millis() as u64,
+                    }
+                })
+            })
+            .collect();
+        hs.into_iter().map(|h| h.join().unwrap()).collect()
+    })
+}
+
+fn chat_http(
     provider: &Provider,
     model: &str,
     history: &[ChatMessage],
