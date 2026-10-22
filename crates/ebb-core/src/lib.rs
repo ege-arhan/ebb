@@ -3,6 +3,7 @@ pub mod agents;
 pub mod apps;
 pub mod autocare;
 pub mod catalog;
+pub mod compress;
 pub mod connect;
 pub mod dupes;
 pub mod error;

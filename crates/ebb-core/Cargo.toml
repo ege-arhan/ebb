@@ -12,6 +12,7 @@ thiserror.workspace = true
 jwalk.workspace = true
 rusqlite.workspace = true
 blake3.workspace = true
+flate2.workspace = true
 trash.workspace = true
 dirs.workspace = true
 glob.workspace = true
