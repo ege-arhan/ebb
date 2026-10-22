@@ -69,6 +69,11 @@ export interface TrayConfig { title: string; lines: string[] }
 
 export interface PopoverStats { disk: DiskUsage | null; memory: MemoryInfo; safe: number | null; trash: number | null; trash_items: number }
 
+export interface TypeStat { category: string; files: number; bytes: number; est_saved: number; ratio: number; worthwhile: boolean; reason: string }
+export interface CompressAnalysis { path: string; total: number; est_saved: number; types: TypeStat[]; method: string; supported: boolean }
+export interface SmartReport { path: string; before: number; after: number; compressed_files: number; skipped_files: number; skipped_bytes: number }
+export interface Opinion { provider: string; model: string; text: string; error: string | null; elapsed_ms: number }
+
 export interface Api {
   homeDir(): Promise<string>;
   locations(): Promise<Location[]>;
@@ -116,6 +121,9 @@ export interface Api {
   openRelease(url: string): Promise<void>;
   findDuplicates(root: string | null, onProgress: (p: DupProgress) => void): Promise<{ groups: DupGroup[]; cloneSupported: boolean }>;
   optimizeClones(groups: DupGroup[]): Promise<OptimizeReport>;
+  compressAnalyze(path: string): Promise<CompressAnalysis>;
+  compressSmart(path: string, minRatio: number): Promise<SmartReport>;
+  aiAskAll(targets: [Provider, string][], history: ChatMessage[], message: string): Promise<Opinion[]>;
   compress(path: string): Promise<CompressReport>;
   decompress(path: string): Promise<CompressReport>;
   largeOld(root: string | null): Promise<FoundFile[]>;

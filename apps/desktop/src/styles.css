@@ -586,3 +586,11 @@ html.popover-mode .shell::before, html.popover-mode .shell::after { display: non
 .smart-cats li.done { border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); } .smart-cats li.off { opacity: .6 !important; }
 .cat-ico { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
 @media (max-width: 900px) { .smart-hero { grid-template-columns: 1fr; padding: 20px; } .orbit { width: 220px; height: 220px; transform: scale(.85); } }
+
+/* akıllı sıkıştırma ve karşılaştırma */
+.analysis { display: grid; gap: 12px; } .types { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.types li { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(80px, 200px) 90px; gap: 16px; align-items: center; padding: 8px 12px; border-radius: 10px; background: var(--bg); } .types li.no { opacity: .55; }
+.types .bar i { background: var(--accent); } .types li.no .bar i { background: var(--muted); } .types .mono { text-align: right; }
+.row-actions { display: inline-flex; gap: 8px; flex-wrap: wrap; }
+.provrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; } .check.pill { padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); }
+.opinions { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; } .opinion { padding: 12px 14px; border-radius: 12px; background: var(--bg); border: 1px solid var(--line); display: grid; gap: 6px; }

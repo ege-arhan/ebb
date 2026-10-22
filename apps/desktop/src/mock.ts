@@ -250,7 +250,7 @@ export const mockApi: Api = {
   careRules: async () => rules.map((r) => ({ ...r })),
   async careSave(r) { rules = rules.map((x) => (x.id === r.id ? r : x)); },
   async careRun(id) { await wait(900); const r = rules.find((x) => x.id === id)!; r.last_run = Date.now() / 1000; r.last_result = "5.4 GB ready for review"; return { rule_id: id, plan_id: "demo", reclaimable: 5.4 * GB, applied: false, moved: 0, message: "Plan ready: 5.4 GB. Review it in the Journal." }; },
-  aiProviders: async () => [{ id: "ollama", name: "Ollama", base_url: "http://127.0.0.1:11434", models: ["llama3.2:3b", "qwen2.5:7b"], online: true }],
+  aiProviders: async () => [{ id: "claude-cli", name: "Claude Code", base_url: "/usr/local/bin/claude", models: ["default"], online: true }, { id: "codex-cli", name: "Codex", base_url: "/usr/local/bin/codex", models: ["default"], online: true }, { id: "ollama", name: "Ollama", base_url: "http://127.0.0.1:11434", models: ["llama3.2:3b", "qwen2.5:7b"], online: true }],
   async aiChat(_p, _m, _h, message) {
     await wait(1400);
     return { text: `Looking at your disk: about ${(782).toFixed(0)} GB is used. The biggest safe wins are Gradle caches (2.3 GB) and Chrome's cache (1.9 GB). I prepared a plan for the safe caches (5.4 GB). Nothing was deleted: review it, then apply it yourself.\n\nYou asked: "${message}"`, tool_calls: [{ name: "disk_usage", args: {}, result_preview: "{\"free\":212e9}" }, { name: "findings", args: {}, result_preview: "[…]" }, { name: "plan_cleanup", args: {}, result_preview: "plan ready" }], plan_id: "demo" };
@@ -264,6 +264,23 @@ export const mockApi: Api = {
     const saved = groups.reduce((a, g) => a + g.reclaimable, 0);
     groups.forEach((g) => { const d = dupes.find((x) => x.hash === g.hash); if (d) { d.optimized = true; d.reclaimable = 0; } });
     return { files: groups.reduce((a, g) => a + g.files.length - 1, 0), saved, skipped: [] };
+  },
+  async compressAnalyze(path) {
+    await wait(900);
+    const types = [
+      { category: "code", files: 12400, bytes: 1.2 * GB, est_saved: 0.84 * GB, ratio: 0.7, worthwhile: true, reason: "compresses well" },
+      { category: "documents", files: 320, bytes: 420 * MB, est_saved: 160 * MB, ratio: 0.38, worthwhile: true, reason: "compresses well" },
+      { category: "text", files: 2100, bytes: 180 * MB, est_saved: 130 * MB, ratio: 0.72, worthwhile: true, reason: "compresses well" },
+      { category: "images", files: 880, bytes: 1.4 * GB, est_saved: 0, ratio: 0, worthwhile: false, reason: "already compressed" },
+      { category: "video", files: 14, bytes: 3.1 * GB, est_saved: 0, ratio: 0, worthwhile: false, reason: "already compressed" },
+      { category: "archives", files: 60, bytes: 640 * MB, est_saved: 0, ratio: 0, worthwhile: false, reason: "already compressed" },
+    ];
+    return { path, total: types.reduce((a, x) => a + x.bytes, 0), est_saved: types.reduce((a, x) => a + x.est_saved, 0), types, method: "APFS transparent compression, per file", supported: true };
+  },
+  async compressSmart(path) { await wait(1500); return { path, before: 6.9 * GB, after: 5.7 * GB, compressed_files: 14820, skipped_files: 962, skipped_bytes: 5.1 * GB }; },
+  async aiAskAll(targets, _h, message) {
+    await wait(1600);
+    return targets.map(([p, m], i) => ({ provider: p.name, model: m, text: `${["Claude Code", "Codex", "Ollama"][i % 3]} says: about 782 GB is used. The quickest safe win is 5.4 GB of caches. (You asked: ${message})`, error: null, elapsed_ms: 900 + i * 700 }));
   },
   async compress(path) { await wait(1200); return { path, before: 4.2 * GB, after: 2.6 * GB, files: 1830 }; },
   async decompress(path) { await wait(900); return { path, before: 2.6 * GB, after: 4.2 * GB, files: 1830 }; },

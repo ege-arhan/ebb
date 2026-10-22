@@ -6,7 +6,8 @@ import { PlanDialog } from "../components/PlanDialog";
 import { human, tilde } from "../format";
 import { api } from "../ipc";
 import { useApp } from "../state";
-import type { CompressReport, DupGroup, DupProgress, FoundFile, Plan } from "../types";
+import type { CompressAnalysis, CompressReport, DupGroup, DupProgress, FoundFile, Plan } from "../types";
+import type { Key } from "../i18n";
 
 // Oturum boyunca saklanan sonuçlar: ekranlar arasında gidip gelince yeniden taranmaz.
 const cache: { large?: FoundFile[]; installers?: FoundFile[] } = {};
@@ -20,6 +21,7 @@ export function Optimize() {
   const [openG, setOpenG] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [cmp, setCmp] = useState<CompressReport | null>(null);
+  const [ana, setAna] = useState<CompressAnalysis | null>(null);
   const [large, setLarge] = useState<FoundFile[] | null>(cache.large ?? null);
   const [inst, setInst] = useState<FoundFile[] | null>(cache.installers ?? null);
   const [picked, setPicked] = useState<Set<string>>(new Set());
@@ -55,17 +57,40 @@ export function Optimize() {
   };
   const trashCopies = async () => setPlan(await api.makePlan([], [], pending.flatMap((g) => g.files.slice(1))));
 
-  const compress = async (undo = false) => {
-    const path = undo ? cmp?.path : await api.pickFolder();
+  const finishCompress = (r: CompressReport, undo: boolean) => {
+    const pct = r.before ? ((r.before - r.after) / r.before) * 100 : 0;
+    if (!undo && pct >= 5) celebrateWith(r.before - r.after, "compress");
+    else if (!undo) toast(t("compressLow").replace("{pct}", pct.toFixed(1)));
+    setCmp(undo ? null : r);
+    void refresh();
+  };
+  // Klasör seç → türlere göre çözümle → yalnızca değecek dosyaları sıkıştır.
+  const analyze = async () => {
+    const path = await api.pickFolder();
     if (!path) return;
+    setBusy("analyze"); setAna(null); setCmp(null);
+    try { setAna(await api.compressAnalyze(path)); } catch (e) { toast(String(e)); }
+    setBusy(null);
+  };
+  const runSmart = async () => {
+    if (!ana) return;
+    setBusy("compress");
+    try {
+      const r = await api.compressSmart(ana.path, 0.1);
+      finishCompress({ path: r.path, before: r.before, after: r.after, files: r.compressed_files }, false);
+      if (r.skipped_files) toast(t("skipFiles").replace("{n}", String(r.skipped_files)));
+      setAna(null);
+    } catch (e) { toast(String(e)); }
+    setBusy(null);
+  };
+  const compress = async (undo = false, path?: string) => {
+    const target = undo ? cmp?.path : path ?? ana?.path;
+    if (!target) return;
     setBusy(undo ? "decompress" : "compress");
     try {
-      const r = undo ? await api.decompress(path) : await api.compress(path);
-      const pct = r.before ? ((r.before - r.after) / r.before) * 100 : 0;
-      if (!undo && pct >= 5) celebrateWith(r.before - r.after, "compress");
-      else if (!undo) toast(t("compressLow").replace("{pct}", pct.toFixed(1)));
-      setCmp(undo ? null : r);
-      void refresh();
+      const r = undo ? await api.decompress(target) : await api.compress(target);
+      finishCompress(r, undo);
+      if (!undo) setAna(null);
     } catch (e) { toast(String(e)); }
     setBusy(null);
   };
@@ -142,8 +167,29 @@ export function Optimize() {
       <section className="panel feature">
         <header>
           <div className="feat-head"><span className="feat-ico"><Archive size={18} aria-hidden /></span><div><h2>{t("compressTitle")}</h2><p className="muted">{t("compressBody")}</p></div></div>
-          <button className="btn primary" disabled={busy !== null} onClick={() => compress(false)}>{busy === "compress" ? <Loader2 size={15} className="spin" aria-hidden /> : <FolderPlus size={15} aria-hidden />} {busy === "compress" ? t("compressing") : t("compressBtn")}</button>
+          <button className="btn primary" disabled={busy !== null} onClick={analyze}>{busy === "analyze" ? <Loader2 size={15} className="spin" aria-hidden /> : <FolderPlus size={15} aria-hidden />} {busy === "analyze" ? t("analyzing") : t("analyze")}</button>
         </header>
+        {ana && (
+          <div className="analysis">
+            <p className="muted">{t("methodLabel")}: {ana.method}</p>
+            <ul className="types">
+              {ana.types.map((x) => (
+                <li key={x.category} className={x.worthwhile ? "yes" : "no"}>
+                  <span className="rowtext"><b>{t(`typ_${x.category}` as Key)}</b><small>{x.files.toLocaleString()} · {human(x.bytes)}{x.worthwhile ? "" : ` · ${x.reason}`}</small></span>
+                  <span className="bar"><i style={{ width: `${Math.round(x.ratio * 100)}%` }} /></span>
+                  <span className="mono">{x.worthwhile ? `−${human(x.est_saved)}` : "—"}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="bigline">
+              <span><b className="mono">{human(ana.est_saved)}</b> {t("estSave")}</span>
+              <span className="row-actions">
+                <button className="btn primary" disabled={busy !== null || !ana.supported || !ana.est_saved} onClick={runSmart}>{busy === "compress" ? <Loader2 size={15} className="spin" aria-hidden /> : <Sparkles size={15} aria-hidden />} {busy === "compress" ? t("compressing") : t("smartCompress")}</button>
+                <button className="btn ghost" disabled={busy !== null || !ana.supported} onClick={() => compress(false)}>{t("compressAll")}</button>
+              </span>
+            </div>
+          </div>
+        )}
         {cmp && (
           <div className="bigline">
             <span>{t("compressedNote")} <b>{tilde(cmp.path, home)}</b>: <span className="mono">{human(cmp.before)} → {human(cmp.after)}</span> · <b className="mono">{human(Math.max(0, cmp.before - cmp.after))}</b> {t("savedWord")}</span>

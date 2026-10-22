@@ -212,6 +212,48 @@ async fn optimize_clones(
 }
 
 #[tauri::command]
+async fn compress_analyze(
+    path: String,
+    state: State<'_, AppState>,
+) -> R<ebb_core::compress::CompressAnalysis> {
+    state.cancel.store(false, Ordering::Relaxed);
+    let cancel = state.cancel.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        ebb_core::compress::analyze(std::path::Path::new(&path), &cancel)
+    })
+    .await
+    .map_err(err)?
+    .map_err(err)
+}
+
+#[tauri::command]
+async fn compress_smart(
+    path: String,
+    min_ratio: f32,
+    state: State<'_, AppState>,
+) -> R<ebb_core::compress::SmartReport> {
+    state.cancel.store(false, Ordering::Relaxed);
+    let cancel = state.cancel.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        ebb_core::compress::compress_smart(std::path::Path::new(&path), min_ratio, &cancel)
+    })
+    .await
+    .map_err(err)?
+    .map_err(err)
+}
+
+#[tauri::command]
+async fn ai_ask_all(
+    targets: Vec<(ebb_ai::Provider, String)>,
+    history: Vec<ebb_ai::ChatMessage>,
+    message: String,
+) -> Vec<ebb_ai::Opinion> {
+    tauri::async_runtime::spawn_blocking(move || ebb_ai::ask_all(&targets, &history, &message))
+        .await
+        .unwrap_or_default()
+}
+
+#[tauri::command]
 async fn compress(path: String) -> R<ebb_core::optimize::CompressReport> {
     tauri::async_runtime::spawn_blocking(move || {
         ebb_core::optimize::compress(std::path::Path::new(&path))
@@ -664,6 +706,9 @@ pub fn run() {
             find_duplicates,
             optimize_clones,
             compress,
+            compress_analyze,
+            compress_smart,
+            ai_ask_all,
             decompress,
             large_old,
             old_installers,
